@@ -20,6 +20,11 @@ class MachineSummary(BaseModel):
     last_cycle_ms: int | None = None
     last_cycle_id: int | None = None
     cycle_count: int = 0
+    max_cv_pct: float | None = Field(
+        None,
+        description="Headline KPI (F-003): highest CV% across all steps. "
+        "null until >=2 cycles processed.",
+    )
 
 
 class StepSummary(BaseModel):
@@ -41,6 +46,11 @@ class CycleSummary(BaseModel):
     steps: list[StepSummary]
     bottleneck_step_index: int | None = None
     bottleneck_step_ms: int | None = None
+    max_cv_pct: float | None = Field(
+        None,
+        description="F-003: highest per-step CV% at time of this cycle. "
+        "null until >=2 cycles processed.",
+    )
 
 
 class StepReplay(BaseModel):

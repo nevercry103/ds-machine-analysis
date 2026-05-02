@@ -81,9 +81,9 @@ Never edit a closed finding — open a new one if the decision changes.
 OEE remains a Phase 2 deliverable but becomes Pillar 2 (supporting), not the headline.
 
 **Action.**
-- [ ] Implement variance calculation in `core/cycle_processor.py` (Phase 1).
-- [ ] Add `cycle_variance` field to `CycleSummary` API schema (Phase 2).
-- [ ] WebSocket event `cycle_anomaly` when variance > 2 sigma (Phase 2).
+- [x] Implement variance calculation in `core/cycle_processor.py` (Phase 1) — Welford's algorithm in `CycleStats`, anomaly detection with CV% threshold + latch.
+- [x] Add `max_cv_pct` field to `MachineSummary` + `CycleSummary` API schemas — headline KPI visible in machine list and cycle history.
+- [x] WebSocket event `cycle_anomaly` when CV% > threshold (8% default) — broadcast via `_BROADCAST_EVENT_TYPES` to all connected clients.
 - [ ] Marketing/sales material lead with "predict failure 2-3 hours ahead" (Phase 5).
 
 ---

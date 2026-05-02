@@ -37,6 +37,7 @@ class MachineSummary:
     last_cycle_ms: int | None
     last_cycle_id: int | None
     cycle_count: int
+    max_cv_pct: float | None
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,7 @@ def _parse_machine(row: dict) -> MachineSummary:
         last_cycle_ms=row.get("last_cycle_ms"),
         last_cycle_id=row.get("last_cycle_id"),
         cycle_count=int(row.get("cycle_count", 0)),
+        max_cv_pct=row.get("max_cv_pct"),
     )
 
 

@@ -34,6 +34,8 @@ def _state(request: Request) -> AppState:
 
 def _summarize(handle: MachineHandle) -> MachineSummary:
     proc = handle.processor
+    stats = proc.step_stats
+    max_cv = max((s.cv_pct for s in stats), default=None) if stats else None
     return MachineSummary(
         id=handle.machine_id,
         name=handle.config.machine_name,
@@ -44,6 +46,7 @@ def _summarize(handle: MachineHandle) -> MachineSummary:
         last_cycle_ms=int(proc.last_total_ms) if proc.last_total_ms else None,
         last_cycle_id=proc.last_cycle_id or None,
         cycle_count=proc.cycle_count,
+        max_cv_pct=round(max_cv, 2) if max_cv is not None and max_cv > 0 else None,
     )
 
 
@@ -76,6 +79,12 @@ async def list_recent_cycles(
         raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
 
     cycles = await state.storage.get_cycles(machine_id, limit=limit)
+
+    # Rolling CV% from the processor — snapshot at query time.
+    proc_stats = handle.processor.step_stats
+    max_cv = max((s.cv_pct for s in proc_stats), default=None) if proc_stats else None
+    max_cv_rounded = round(max_cv, 2) if max_cv is not None and max_cv > 0 else None
+
     out: list[CycleSummary] = []
     for cycle in cycles:
         bottleneck_step = max(cycle.steps, key=lambda s: s.duration_ms, default=None)
@@ -100,6 +109,7 @@ async def list_recent_cycles(
                 bottleneck_step_ms=int(bottleneck_step.duration_ms)
                 if bottleneck_step
                 else None,
+                max_cv_pct=max_cv_rounded,
             )
         )
     return out
