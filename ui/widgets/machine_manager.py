@@ -31,7 +31,7 @@ class MachineManagerWidget(QWidget):
 
     machineSelected = pyqtSignal(str)  # emits machine_id when row selected
 
-    COLUMNS = ("Machine", "Status", "Last cycle (ms)", "Cycles")
+    COLUMNS = ("Machine", "Status", "Last cycle (ms)", "Cycles", "CV%")
 
     def __init__(
         self,
@@ -55,18 +55,10 @@ class MachineManagerWidget(QWidget):
 
         self._table = QTableWidget(0, len(self.COLUMNS), self)
         self._table.setHorizontalHeaderLabels(self.COLUMNS)
-        self._table.horizontalHeader().setSectionResizeMode(
-            0, QHeaderView.ResizeMode.Stretch
-        )
-        self._table.horizontalHeader().setSectionResizeMode(
-            1, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self._table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.ResizeToContents
-        )
-        self._table.horizontalHeader().setSectionResizeMode(
-            3, QHeaderView.ResizeMode.ResizeToContents
-        )
+        header = self._table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        for col in range(1, len(self.COLUMNS)):
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.ResizeToContents)
         self._table.verticalHeader().setVisible(False)
         self._table.setSelectionBehavior(self._table.SelectionBehavior.SelectRows)
         self._table.setEditTriggers(self._table.EditTrigger.NoEditTriggers)
@@ -126,6 +118,10 @@ class MachineManagerWidget(QWidget):
 
         count = QTableWidgetItem(str(m.cycle_count))
         self._table.setItem(row, 3, count)
+
+        cv_text = "—" if m.max_cv_pct is None else f"{m.max_cv_pct:.1f}"
+        cv_item = QTableWidgetItem(cv_text)
+        self._table.setItem(row, 4, cv_item)
 
     def _selected_id(self) -> str | None:
         sel = self._table.selectedItems()

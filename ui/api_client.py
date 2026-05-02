@@ -54,6 +54,7 @@ class CycleSummary:
     total_ms: int
     steps: list[StepSummary]
     bottleneck_step_index: int | None
+    max_cv_pct: float | None
 
 
 class ApiClient:
@@ -137,4 +138,5 @@ def _parse_cycle(row: dict) -> CycleSummary:
             for s in row.get("steps", [])
         ],
         bottleneck_step_index=row.get("bottleneck_step_index"),
+        max_cv_pct=row.get("max_cv_pct"),
     )

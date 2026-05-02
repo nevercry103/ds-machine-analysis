@@ -173,9 +173,12 @@ class CycleGanttWidget(QWidget):
             return
 
         cycle = cycles[0]
+        cv_part = ""
+        if hasattr(cycle, "max_cv_pct") and cycle.max_cv_pct is not None:
+            cv_part = f"  ·  CV {cycle.max_cv_pct:.1f}%"
         self._caption.setText(
             f"{self._machine_id} — cycle #{cycle.cycle_id}  ·  "
-            f"{len(cycle.steps)} steps  ·  {cycle.total_ms} ms"
+            f"{len(cycle.steps)} steps  ·  {cycle.total_ms} ms{cv_part}"
         )
         self._canvas.set_cycle(cycle)
         log.debug(
