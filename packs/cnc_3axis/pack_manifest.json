@@ -1,0 +1,11 @@
+{
+  "pack_id": "cnc_3axis",
+  "version": "1.0.0",
+  "machine_class": "cnc",
+  "description": "3-axis CNC milling — typical 5-step cycle (load, home, rough, finish, unload)",
+  "supported_plc_brands": ["siemens_s7", "codesys", "beckhoff"],
+  "default_steps": 5,
+  "tier_required": "tier_1",
+  "author": "DS Automation",
+  "license": "Proprietary"
+}

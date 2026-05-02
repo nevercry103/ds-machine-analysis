@@ -1,0 +1,54 @@
+# Simulator Machine Config — Hardware-Free Demo Profile
+#
+# Copy this file to: config/machines/machine_simulator.yaml
+# (without the .sample suffix). The platform will pick it up at startup
+# and run a synthetic cycle every ~3 seconds with no PLC required.
+#
+# Use this profile when you want to:
+#   - run the full stack on a laptop with no PLC hardware
+#   - exercise the API + PWA + DB layers end-to-end
+#   - demo Cycle Variance + bottleneck detection during a sales call
+
+machine:
+  id: "machine_simulator"
+  name: "Simulator (no PLC)"
+  description: "Hardware-free synthetic cycle source for dev / demo"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://localhost:4840"   # ignored in simulator mode
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: true                   # <-- the bit that matters
+  simulator_cycle_ms: 3000
+  simulator_jitter_ms: 150
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 5
+  steps:
+    - index: 1
+      name: "Loading"
+    - index: 2
+      name: "Positioning"
+    - index: 3
+      name: "Assembly"
+    - index: 4
+      name: "Quality Check"
+    - index: 5
+      name: "Unload"
+
+oee_analyzer:
+  enabled: false
+
+event_log:
+  enabled: false
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/machine_simulator.db"

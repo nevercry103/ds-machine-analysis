@@ -1,0 +1,11 @@
+{
+  "pack_id": "bottle_filler",
+  "version": "1.0.0",
+  "machine_class": "filler",
+  "description": "Inline bottle filler — 6-step cycle (infeed, position, fill, cap, label, discharge)",
+  "supported_plc_brands": ["siemens_s7", "codesys", "beckhoff", "mitsubishi"],
+  "default_steps": 6,
+  "tier_required": "tier_1",
+  "author": "DS Automation",
+  "license": "Proprietary"
+}

@@ -1,0 +1,48 @@
+# Bottle Filler — machine configuration sample
+# Copy to: config/machines/<your_id>.yaml
+
+machine:
+  id: "filler_001"
+  name: "Inline Bottle Filler #1"
+  description: "Pack: bottle_filler"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://192.168.1.20:4840"
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: false
+  simulator_cycle_ms: 2500
+  simulator_jitter_ms: 100
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 6
+  steps:
+    - index: 1
+      name: "Infeed"
+    - index: 2
+      name: "Position"
+    - index: 3
+      name: "Fill"
+    - index: 4
+      name: "Cap"
+    - index: 5
+      name: "Label"
+    - index: 6
+      name: "Discharge"
+
+oee_analyzer:
+  enabled: false
+
+event_log:
+  enabled: false
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/filler_001.db"

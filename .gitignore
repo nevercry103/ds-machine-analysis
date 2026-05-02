@@ -1,0 +1,122 @@
+# ============================================================
+# DS Machine Analyzer Platform - .gitignore
+# ============================================================
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.so
+.Python
+*.egg-info/
+*$py.class
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Build / Package ---
+build/
+dist/
+build_log.txt
+packaging/output/
+packaging/build/
+
+# --- Test / QA caches ---
+.pytest_cache/
+.benchmarks/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# --- QA harness output (regenerable) ---
+output/
+!output/.gitkeep
+
+# --- Runtime logs ---
+logs/
+*.log
+
+# --- IDE ---
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# --- OS shortcuts ---
+*.lnk
+*.vbs
+
+# --- Environment / credentials ---
+.env
+.env.*
+
+# --- Security: license, user data ---
+config/license.key
+config/users.json
+config/user_settings.json
+config/.first_run_done
+
+# --- Customer-specific machine configs (not part of platform) ---
+config/machines/customer_*/
+config/machines/machine_*.yaml
+!config/machines/machine_*.yaml.sample
+!config/machines/_examples/
+!config/machines/README.md
+
+# --- Customer-specific machine packs ---
+packs/customer_*/
+
+# --- Databases / runtime data ---
+data/db/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/archive/
+data/backups/
+data/exports/
+
+# --- Cycle replay archives (binary time-series, per-deployment) ---
+data/replay/
+data/cycle_snapshots/
+
+# --- Test fixture data (regenerate via scripts/generate_test_data.py) ---
+data/test_fixtures/
+
+# --- Vendor reference material (copyright PLC vendors — never commit) ---
+# Local-only reference manuals used during development.
+# DS Machine Analyzer is clean-room; we read these manuals for spec parity
+# but never redistribute the binaries.
+docs/vendor_manuals/
+docs/Siemens*/
+docs/Codesys*/
+docs/Beckhoff*/
+
+# --- Claude Code workspace cache ---
+.claude/
+!.claude/settings.json
+
+# --- Temp / backup ---
+*.bak
+*.tmp
+.tmp_audit/
+
+# --- Keep directory structure ---
+!logs/.gitkeep
+!data/.gitkeep
+!config/machines/.gitkeep

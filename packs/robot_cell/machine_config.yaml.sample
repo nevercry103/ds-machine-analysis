@@ -1,0 +1,43 @@
+# Robot Cell — machine configuration sample
+
+machine:
+  id: "robotcell_001"
+  name: "Robot Pick-and-Place Cell #1"
+  description: "Pack: robot_cell"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://192.168.1.30:4840"
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: false
+  simulator_cycle_ms: 3000
+  simulator_jitter_ms: 250
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 4
+  steps:
+    - index: 1
+      name: "Pick"
+    - index: 2
+      name: "Transfer"
+    - index: 3
+      name: "Place"
+    - index: 4
+      name: "Retreat"
+
+oee_analyzer:
+  enabled: false
+
+event_log:
+  enabled: false
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/robotcell_001.db"

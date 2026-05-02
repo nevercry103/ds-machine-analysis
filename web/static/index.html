@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>DS Machine Analyzer</title>
+    <link rel="manifest" href="/web/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/web/icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/web/icons/icon-192.png" />
+    <link rel="stylesheet" href="/web/css/style.css" />
+    <script type="module">
+      import { applyTheme, loadTheme } from "/web/js/theme.js";
+      applyTheme(loadTheme()); // pre-paint, no FOUC
+    </script>
+  </head>
+  <body>
+    <header class="appbar">
+      <h1>DS Machine Analyzer</h1>
+      <span id="connection" class="pill" title="API health">connecting…</span>
+      <span id="tier" class="pill" title="License tier">tier?</span>
+      <span class="spacer"></span>
+      <button id="install-app" class="btn" hidden aria-label="Install app">Install</button>
+      <button id="theme-toggle" class="btn btn-icon" aria-label="Toggle theme">☾</button>
+    </header>
+
+    <main>
+      <section class="section">
+        <div class="section-head">
+          <h2 id="machine-count">Machines</h2>
+          <span class="meta" id="last-updated">—</span>
+        </div>
+        <div id="grid" class="machine-grid">
+          <!-- skeleton placeholder cards while loading -->
+          <div class="machine-card skel" style="height:120px"></div>
+          <div class="machine-card skel" style="height:120px"></div>
+          <div class="machine-card skel" style="height:120px"></div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/web/js/index.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/web/service-worker.js");
+      }
+    </script>
+  </body>
+</html>

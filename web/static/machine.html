@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b1220" />
+    <title>Machine — DS Machine Analyzer</title>
+    <link rel="manifest" href="/web/manifest.json" />
+    <link rel="icon" type="image/svg+xml" href="/web/icons/icon.svg" />
+    <link rel="stylesheet" href="/web/css/style.css" />
+    <script type="module">
+      import { applyTheme, loadTheme } from "/web/js/theme.js";
+      applyTheme(loadTheme());
+    </script>
+  </head>
+  <body>
+    <header class="appbar">
+      <a href="/web/" class="btn btn-icon" aria-label="Back" title="Back">←</a>
+      <h1 id="machine-name">Machine</h1>
+      <span id="machine-status" class="status offline">offline</span>
+      <span class="spacer"></span>
+      <button id="theme-toggle" class="btn btn-icon" aria-label="Toggle theme">☾</button>
+    </header>
+
+    <main>
+      <nav class="crumbs">
+        <a href="/web/">Machines</a>
+        <span class="sep">/</span>
+        <span id="machine-id">…</span>
+      </nav>
+
+      <!-- KPI strip -->
+      <section class="kpi-row" id="kpi-row">
+        <div class="card">
+          <p class="card-title">Last cycle</p>
+          <p class="card-value" id="kpi-last-cycle">—</p>
+          <p class="card-foot" id="kpi-last-cycle-foot">no cycles yet</p>
+        </div>
+        <div class="card">
+          <p class="card-title">Cycle count</p>
+          <p class="card-value" id="kpi-cycle-count">—</p>
+          <p class="card-foot">since process start</p>
+        </div>
+        <div class="card">
+          <p class="card-title">Max CV%</p>
+          <p class="card-value" id="kpi-max-cv">—</p>
+          <p class="card-foot">leading variance indicator</p>
+        </div>
+        <div class="card">
+          <p class="card-title">Bottleneck</p>
+          <p class="card-value" id="kpi-bottleneck" style="font-size:var(--fs-xl)">—</p>
+          <p class="card-foot" id="kpi-bottleneck-foot">slowest step</p>
+        </div>
+      </section>
+
+      <div class="split kpi-detail">
+        <!-- OEE (Pillar 2) -->
+        <section class="section">
+          <div class="section-head">
+            <h2>OEE</h2>
+            <span class="meta" id="oee-window">60 min</span>
+          </div>
+          <div class="card">
+            <div class="gauge">
+              <svg viewBox="0 0 120 120">
+                <circle class="track" cx="60" cy="60" r="50" />
+                <circle id="oee-arc" class="arc" cx="60" cy="60" r="50"
+                        stroke-dasharray="0 314" />
+              </svg>
+              <div class="label">
+                <span class="v" id="oee-value">—</span>
+                <span class="l">OEE</span>
+              </div>
+            </div>
+            <div class="oee-bars">
+              <span class="label">Availability</span>
+              <div class="track"><div class="fill" id="bar-a" style="width:0%"></div></div>
+              <span class="v" id="val-a">—</span>
+              <span class="label">Performance</span>
+              <div class="track"><div class="fill" id="bar-p" style="width:0%"></div></div>
+              <span class="v" id="val-p">—</span>
+              <span class="label">Quality</span>
+              <div class="track"><div class="fill" id="bar-q" style="width:0%"></div></div>
+              <span class="v" id="val-q">—</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Gantt + step stats (Pillar 1) -->
+        <section class="section">
+          <div class="section-head">
+            <h2>Last cycle Gantt</h2>
+            <span class="meta" id="gantt-cycle-id">—</span>
+          </div>
+          <div class="card">
+            <div class="gantt" id="gantt"></div>
+            <table class="table" style="margin-top:var(--sp-4)">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th class="num">avg</th>
+                  <th class="num">min</th>
+                  <th class="num">max</th>
+                  <th class="num">CV%</th>
+                </tr>
+              </thead>
+              <tbody id="step-stats-body">
+                <tr><td colspan="5" class="empty">No cycles yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- Operator-as-Sensor: downtime tagger -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Tag downtime</h2>
+          <span class="meta">operator-as-sensor</span>
+        </div>
+        <div class="card">
+          <div class="chips" id="downtime-chips">
+            <div class="skel chip" style="width:120px;height:32px"></div>
+            <div class="skel chip" style="width:140px;height:32px"></div>
+            <div class="skel chip" style="width:120px;height:32px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Events (Pillar 3) -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Events</h2>
+          <span class="meta" id="events-meta">—</span>
+        </div>
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Severity</th>
+                <th>Category</th>
+                <th>Message</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="events-body">
+              <tr><td colspan="5" class="empty">No events</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/web/js/machine.js"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/web/service-worker.js");
+      }
+    </script>
+  </body>
+</html>

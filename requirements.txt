@@ -1,0 +1,50 @@
+# DS Machine Analyzer Platform — Python dependencies
+# Shared standards with DS Vision Platform (sibling product)
+
+# Core data & async
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Protocol communication (PLC adapters)
+asyncua>=0.9.0           # OPC-UA — Siemens / Codesys / Beckhoff (pilot)
+pymodbus>=3.5.0          # Modbus TCP/RTU — planned
+pycomm3>=0.32.0          # EtherNet/IP — Allen-Bradley — planned
+# pyads, pymcprotocol installed only on production sites where the
+# matching brand is wired (optional vendor SDKs)
+
+# Database
+SQLAlchemy>=2.0.0
+psycopg2-binary>=2.9.0   # PostgreSQL (Mode 1 & 2 — server)
+aiosqlite>=0.19.0        # SQLite (Mode 3 — laptop)
+
+# Configuration
+PyYAML>=6.0
+python-dotenv>=1.0.0
+
+# API gateway (FastAPI + WebSocket — API-first architecture)
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.9   # form parsing for FastAPI
+python-jose[cryptography]>=3.3.0  # JWT auth
+jinja2>=3.1.0             # PWA web templates
+
+# UI (PyQt6 desktop — one of several API consumers)
+PyQt6>=6.5.0
+qtawesome>=1.4.0
+pyqt-toast-notification>=1.3.0
+
+# Utilities
+loguru>=0.7.0
+numpy>=1.26.0
+Pillow>=10.0.0
+psutil>=5.9.0
+tomli>=2.0.0 ; python_version < "3.11"
+
+# Dev/Test
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.27.0            # async test client for FastAPI
+black>=23.0.0
+mypy>=1.0.0
+ruff>=0.1.0

@@ -1,0 +1,46 @@
+# CNC 3-Axis — machine configuration sample
+# Copy to: config/machines/machine_<your_id>.yaml
+
+machine:
+  id: "cnc_001"
+  name: "CNC Mill #1"
+  description: "3-axis CNC milling — Pack: cnc_3axis"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://192.168.1.10:4840"
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: false
+  simulator_cycle_ms: 30000
+  simulator_jitter_ms: 2000
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 5
+  steps:
+    - index: 1
+      name: "Load"
+    - index: 2
+      name: "Home"
+    - index: 3
+      name: "Rough Cut"
+    - index: 4
+      name: "Finish Cut"
+    - index: 5
+      name: "Unload"
+
+oee_analyzer:
+  enabled: false   # Pillar 2 — Phase 2 stub
+
+event_log:
+  enabled: false   # Pillar 3 — Phase 2 stub
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/cnc_001.db"

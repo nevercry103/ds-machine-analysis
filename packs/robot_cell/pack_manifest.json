@@ -1,0 +1,11 @@
+{
+  "pack_id": "robot_cell",
+  "version": "1.0.0",
+  "machine_class": "robot_cell",
+  "description": "Single-robot pick-and-place cell — 4-step cycle (pick, transfer, place, retreat)",
+  "supported_plc_brands": ["siemens_s7", "codesys", "beckhoff", "mitsubishi"],
+  "default_steps": 4,
+  "tier_required": "tier_1",
+  "author": "DS Automation",
+  "license": "Proprietary"
+}

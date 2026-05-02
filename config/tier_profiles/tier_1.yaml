@@ -1,0 +1,29 @@
+# Tier 1 — Single Machine
+#
+# Entry-level license: 1 machine, basic cycle analytics, no Replay Mode.
+# Target customer: small SME wanting to evaluate or pilot DS Machine
+# Analyzer on a single line.
+
+tier_id: "tier_1"
+display_name: "Single Machine"
+description: "1 machine, cycle analytics + Cycle Variance, basic UI"
+
+# Capacity
+max_machines: 1
+max_steps_per_machine: 10
+
+# Features
+features:
+  cycle_analytics: true
+  cycle_variance: true
+  bottleneck_detection: true
+  oee_analytics: false        # tier_5+
+  event_log: false            # tier_unlimited
+  replay_mode: false          # tier_5+
+  push_notifications: false   # tier_unlimited
+  multi_plc_per_machine: false  # tier_unlimited
+  pwa_web_hmi: true
+  desktop_ui: true
+
+# Replay retention (only relevant if replay_mode enabled)
+replay_retention_hours: 0

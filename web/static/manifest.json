@@ -1,0 +1,28 @@
+{
+  "name": "DS Machine Analyzer",
+  "short_name": "DS-MA",
+  "description": "PLC analytics for SME manufacturing — Cycle / OEE / Event Log",
+  "start_url": "/web/",
+  "scope": "/web/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0F172A",
+  "background_color": "#FFFFFF",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["productivity", "industrial"]
+}

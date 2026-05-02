@@ -1,0 +1,14 @@
+# Siemens S7-1500 OT Template Standard
+# Import to TIA Portal — File: FB_CycleMaster.scl
+# 
+# Handshake protocol:
+# 1. PLC sets CycleReady = TRUE when cycle complete
+# 2. Python reads CycleLog data structure
+# 3. Python sets CycleReset = TRUE (acknowledge)
+# 4. PLC clears CycleReady and CycleReset
+#
+# Timestamp is calculated by PLC (using RD_SYS_T), not by Python.
+# This ensures ≤10ms accuracy independent of network.
+
+# TODO: Implement FB_CycleMaster.scl in TIA Portal
+# This is a placeholder — actual SCL will be imported from TIA Portal project

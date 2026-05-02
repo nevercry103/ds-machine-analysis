@@ -1,0 +1,62 @@
+# Full pillars demo — all 3 pillars enabled (Cycle / OEE / Event Log).
+# Requires tier_5 or tier_unlimited.
+#
+# Copy to: config/machines/machine_full_pillars.yaml
+
+machine:
+  id: "machine_full_pillars"
+  name: "Full Pillars Demo"
+  description: "Cycle + OEE + Event Log + Replay (tier_5+)"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://localhost:4840"
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: true
+  simulator_cycle_ms: 3000
+  simulator_jitter_ms: 200
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 4
+  steps:
+    - index: 1
+      name: "Pick"
+    - index: 2
+      name: "Transfer"
+    - index: 3
+      name: "Place"
+    - index: 4
+      name: "Retreat"
+
+oee_analyzer:
+  enabled: true
+  window_minutes: 60     # rolling window
+  ideal_cycle_ms: 2500.0 # if you know the target cycle time, set it here
+
+event_log:
+  enabled: true
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/machine_full_pillars.db"
+
+replay:
+  enabled: true
+  tags:
+    - name: "spindle_rpm"
+      address: "ns=3;s=Drive.SpindleRpm"
+      kind: "number"
+      unit: "rpm"
+    - name: "vacuum_ok"
+      address: "ns=3;s=IO.VacuumPresent"
+      kind: "bool"
+
+licensing:
+  tier_required: "tier_5"

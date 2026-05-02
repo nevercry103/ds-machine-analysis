@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#0b1220"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#g)"/>
+  <!-- Stylized "DS-MA" — gear + bar chart -->
+  <g fill="none" stroke="#ffffff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <!-- bar chart (Cycle Variance) -->
+    <rect x="120" y="290" width="42" height="100" rx="6" fill="#ffffff" stroke="none"/>
+    <rect x="186" y="220" width="42" height="170" rx="6" fill="#60a5fa" stroke="none"/>
+    <rect x="252" y="170" width="42" height="220" rx="6" fill="#ffffff" stroke="none"/>
+    <rect x="318" y="240" width="42" height="150" rx="6" fill="#60a5fa" stroke="none"/>
+    <!-- top accent line -->
+    <path d="M120 160 L200 130 L290 100 L380 140" stroke-width="14" stroke="#ffffff"/>
+    <circle cx="200" cy="130" r="9" fill="#ffffff" stroke="none"/>
+    <circle cx="290" cy="100" r="9" fill="#ffffff" stroke="none"/>
+    <circle cx="380" cy="140" r="9" fill="#ffffff" stroke="none"/>
+  </g>
+</svg>

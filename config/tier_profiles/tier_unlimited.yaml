@@ -1,0 +1,26 @@
+# Tier Unlimited — Enterprise
+#
+# Top-tier license: 10 machines (platform max), every feature enabled,
+# multi-PLC per machine, 30-day replay retention.
+
+tier_id: "tier_unlimited"
+display_name: "Enterprise"
+description: "10 machines, all features, multi-PLC, 30-day replay retention"
+
+max_machines: 10
+max_steps_per_machine: 50
+
+features:
+  cycle_analytics: true
+  cycle_variance: true
+  bottleneck_detection: true
+  oee_analytics: true
+  event_log: true
+  replay_mode: true
+  push_notifications: true
+  multi_plc_per_machine: true
+  pwa_web_hmi: true
+  desktop_ui: true
+
+# 30 days of full PLC tag snapshots per cycle.
+replay_retention_hours: 720

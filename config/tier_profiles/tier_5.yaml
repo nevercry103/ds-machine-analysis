@@ -1,0 +1,26 @@
+# Tier 5 — Mid-Market
+#
+# Multi-machine license: up to 5 machines, OEE, Replay Mode (24h),
+# suitable for a single line or a small factory.
+
+tier_id: "tier_5"
+display_name: "Mid-Market"
+description: "5 machines, OEE, Replay Mode (24h retention), event log"
+
+max_machines: 5
+max_steps_per_machine: 20
+
+features:
+  cycle_analytics: true
+  cycle_variance: true
+  bottleneck_detection: true
+  oee_analytics: true
+  event_log: true
+  replay_mode: true
+  push_notifications: true
+  multi_plc_per_machine: false  # tier_unlimited
+  pwa_web_hmi: true
+  desktop_ui: true
+
+# 24-hour replay window — engineer can scrub through last day.
+replay_retention_hours: 24

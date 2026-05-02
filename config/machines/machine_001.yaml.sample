@@ -1,0 +1,52 @@
+# Machine Configuration — Sample (machine_001.yaml)
+# Copy to: config/machines/machine_001.yaml
+
+machine:
+  id: "machine_001"
+  name: "Line A — Station 1"
+  description: "Assembly conveyor — pilot for cycle analytics"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://192.168.1.10:4840"
+  namespace: 3  # OPC-UA namespace for FB_CycleMaster
+
+  # Handshake signal mapping (PLC side)
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  # Simulator mode — when true, no real PLC connection is made.
+  # The adapter generates synthetic cycles useful for headless dev/test.
+  simulator: false
+  simulator_cycle_ms: 5000      # average cycle period in simulator mode
+  simulator_jitter_ms: 200      # +/- jitter on the period
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 5
+  steps:
+    - index: 1
+      name: "Loading"
+    - index: 2
+      name: "Positioning"
+    - index: 3
+      name: "Assembly"
+    - index: 4
+      name: "Quality Check"
+    - index: 5
+      name: "Unload"
+
+oee_analyzer:
+  enabled: false  # Planned — Pillar 2
+
+event_log:
+  enabled: false  # Planned — Pillar 3
+
+# Storage mode (pilot uses SQLite)
+storage:
+  mode: "sqlite"  # sqlite | postgres
+  sqlite_path: "data/machine_001.db"
+
+# Add a new step: just edit YAML — no Python code change needed.

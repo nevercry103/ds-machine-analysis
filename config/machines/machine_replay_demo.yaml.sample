@@ -1,0 +1,76 @@
+# Replay Mode demo profile — simulator emits synthetic tag values per
+# step so the /api/machines/{id}/cycles/{cycle_id}/replay endpoint has
+# something interesting to serve.
+#
+# Copy to: config/machines/machine_replay_demo.yaml
+# Requires: tier_5 or tier_unlimited (Replay Mode is gated).
+
+machine:
+  id: "machine_replay_demo"
+  name: "Replay Mode Demo"
+  description: "Simulator + Replay Mode (tier_5+) — synthetic spindle/temp/pressure"
+  enabled: true
+
+protocol:
+  type: "opcua"
+  url: "opc.tcp://localhost:4840"
+  namespace: 3
+
+  cycle_ready_tag: "CycleReady"
+  cycle_reset_tag: "CycleReset"
+  cycle_log_tag: "DB_CycleLog"
+
+  simulator: true
+  simulator_cycle_ms: 4000
+  simulator_jitter_ms: 200
+
+cycle_analyzer:
+  enabled: true
+  total_steps: 4
+  steps:
+    - index: 1
+      name: "Pick"
+    - index: 2
+      name: "Transfer"
+    - index: 3
+      name: "Place"
+    - index: 4
+      name: "Retreat"
+
+oee_analyzer:
+  enabled: false
+
+event_log:
+  enabled: false
+
+storage:
+  mode: "sqlite"
+  sqlite_path: "data/machine_replay_demo.db"
+
+# Replay Mode (Phase 2b, F-005) — capture these tag values at every
+# step boundary. Simulator generates synthetic values; real OPC-UA
+# adapter would read by `address` (NodeId).
+replay:
+  enabled: true
+  tags:
+    - name: "spindle_rpm"
+      address: "ns=3;s=Drive.SpindleRpm"
+      kind: "number"
+      unit: "rpm"
+    - name: "temperature_C"
+      address: "ns=3;s=Sensors.SpindleTempC"
+      kind: "number"
+      unit: "degC"
+    - name: "pressure_bar"
+      address: "ns=3;s=Sensors.HydraulicPressure"
+      kind: "number"
+      unit: "bar"
+    - name: "vacuum_ok"
+      address: "ns=3;s=IO.VacuumPresent"
+      kind: "bool"
+    - name: "robot_state"
+      address: "ns=3;s=Robot.State"
+      kind: "string"
+
+licensing:
+  tier_required: "tier_5"

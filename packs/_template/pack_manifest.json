@@ -1,0 +1,12 @@
+{
+  "pack_id": "_template",
+  "version": "0.1.0",
+  "machine_class": "generic",
+  "description": "Template pack — copy this folder and customize for a specific machine class",
+  "supported_plc_brands": ["siemens_s7", "codesys", "beckhoff", "mitsubishi", "allen_bradley", "omron"],
+  "default_steps": 5,
+  "tier_required": "tier_1",
+  "author": "DS Automation",
+  "license": "Proprietary",
+  "is_template": true
+}
