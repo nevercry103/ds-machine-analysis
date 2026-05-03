@@ -24,3 +24,6 @@ features:
 
 # 24-hour replay window — engineer can scrub through last day.
 replay_retention_hours: 24
+
+# Data retention (0 = unlimited)
+data_retention_days: 0

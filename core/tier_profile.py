@@ -24,6 +24,7 @@ _DEFAULT_TIER_DIR = _PROJECT_ROOT / "config" / "tier_profiles"
 # Strict subset ordering — tier_X allows everything in tier_Y when X >= Y.
 # Stored as a rank so we can do `loaded.rank >= required.rank`.
 _TIER_RANK: dict[str, int] = {
+    "tier_free": 0,
     "tier_1": 1,
     "tier_5": 2,
     "tier_unlimited": 3,
@@ -55,6 +56,7 @@ class TierProfile(BaseModel):
     max_steps_per_machine: int = Field(..., ge=1)
     features: TierFeatures = Field(default_factory=TierFeatures)
     replay_retention_hours: int = Field(0, ge=0)
+    data_retention_days: int = Field(0, ge=0)  # 0 = unlimited
 
     model_config = ConfigDict(extra="ignore")
 

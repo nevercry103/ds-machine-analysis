@@ -9,10 +9,11 @@ Embedded: `main.py` builds an `AppState` and assigns it to
 
 from __future__ import annotations
 
+import asyncio
 import os
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -105,11 +106,35 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
 
     await state.registry.start_all()
+
+    # Retention cleanup — run once at startup, then every 6 hours.
+    retention_task: asyncio.Task | None = None
+    tier = state.registry.tier
+    if tier is not None and tier.data_retention_days > 0:
+        async def _retention_loop() -> None:
+            while True:
+                try:
+                    cutoff = datetime.now(timezone.utc) - timedelta(
+                        days=tier.data_retention_days
+                    )
+                    await state.storage.delete_old_data(cutoff)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("Retention cleanup failed", error=str(exc))
+                await asyncio.sleep(6 * 3600)  # every 6 hours
+
+        retention_task = asyncio.create_task(_retention_loop())
+        log.info(
+            "Retention cleanup enabled",
+            days=tier.data_retention_days,
+        )
+
     log.info("API lifespan: ready", machines=len(state.registry))
 
     try:
         yield
     finally:
+        if retention_task is not None:
+            retention_task.cancel()
         log.info("API lifespan: shutting down")
         await state.registry.stop_all()
         await state.storage.disconnect()

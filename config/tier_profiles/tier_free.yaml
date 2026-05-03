@@ -1,0 +1,32 @@
+# Tier Free — Community / Evaluation
+#
+# Zero-cost entry: 1 machine, 7-day data retention, basic cycle analytics.
+# Target: SME engineer evaluating DS Machine Analyzer before purchasing.
+# Competitive response to Schneider EcoStruxure free tier (F-006).
+
+tier_id: "tier_free"
+display_name: "Free"
+description: "1 machine, 7-day data retention, basic cycle analytics"
+
+# Capacity
+max_machines: 1
+max_steps_per_machine: 5
+
+# Features
+features:
+  cycle_analytics: true
+  cycle_variance: true
+  bottleneck_detection: true
+  oee_analytics: false
+  event_log: false
+  replay_mode: false
+  push_notifications: false
+  multi_plc_per_machine: false
+  pwa_web_hmi: true
+  desktop_ui: true
+
+# No replay on free tier
+replay_retention_hours: 0
+
+# Auto-delete cycles and events older than 7 days
+data_retention_days: 7

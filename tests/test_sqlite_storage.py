@@ -107,3 +107,64 @@ async def test_duplicate_cycle_id_is_silently_skipped():
         assert len(recent) == 1
 
         await storage.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_delete_old_data_removes_expired_cycles():
+    """Retention cleanup deletes cycles older than cutoff."""
+    with TemporaryDirectory() as tmpdir:
+        storage = SqliteStorage(Path(tmpdir) / "retention.db")
+        await storage.connect()
+
+        # Old cycle: 30 days ago
+        old = _cycle(1)
+        old.timestamp_start = datetime(2026, 4, 1, 10, 0, 0, tzinfo=timezone.utc)
+        old.timestamp_end = datetime(2026, 4, 1, 10, 0, 1, tzinfo=timezone.utc)
+        assert await storage.save_cycle(old) is True
+
+        # Recent cycle: now
+        recent_cycle = _cycle(2)
+        recent_cycle.timestamp_start = datetime(2026, 5, 2, 10, 0, 0, tzinfo=timezone.utc)
+        recent_cycle.timestamp_end = datetime(2026, 5, 2, 10, 0, 1, tzinfo=timezone.utc)
+        assert await storage.save_cycle(recent_cycle) is True
+
+        # Delete anything before May 1
+        cutoff = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+        deleted = await storage.delete_old_data(cutoff)
+        assert deleted >= 1
+
+        # Old cycle gone, recent survives
+        assert await storage.get_cycle("machine_001", 1) is None
+        assert await storage.get_cycle("machine_001", 2) is not None
+
+        await storage.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_delete_old_data_scoped_to_machine():
+    """Retention cleanup with machine_id only affects that machine."""
+    with TemporaryDirectory() as tmpdir:
+        storage = SqliteStorage(Path(tmpdir) / "scope.db")
+        await storage.connect()
+
+        old_ts_start = datetime(2026, 4, 1, 10, 0, 0, tzinfo=timezone.utc)
+        old_ts_end = datetime(2026, 4, 1, 10, 0, 1, tzinfo=timezone.utc)
+
+        c1 = _cycle(1, machine_id="m1")
+        c1.timestamp_start = old_ts_start
+        c1.timestamp_end = old_ts_end
+        await storage.save_cycle(c1)
+
+        c2 = _cycle(1, machine_id="m2")
+        c2.timestamp_start = old_ts_start
+        c2.timestamp_end = old_ts_end
+        await storage.save_cycle(c2)
+
+        cutoff = datetime(2026, 5, 1, 0, 0, 0, tzinfo=timezone.utc)
+        await storage.delete_old_data(cutoff, machine_id="m1")
+
+        # m1 cycle deleted, m2 cycle intact
+        assert await storage.get_cycle("m1", 1) is None
+        assert await storage.get_cycle("m2", 1) is not None
+
+        await storage.disconnect()

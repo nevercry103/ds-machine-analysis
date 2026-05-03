@@ -24,3 +24,6 @@ features:
 
 # 30 days of full PLC tag snapshots per cycle.
 replay_retention_hours: 720
+
+# Data retention (0 = unlimited)
+data_retention_days: 0

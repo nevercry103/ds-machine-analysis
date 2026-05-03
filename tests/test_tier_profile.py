@@ -14,7 +14,7 @@ from core.tier_profile import (
 
 def test_shipped_tiers_load():
     tiers = list_available_tiers()
-    assert sorted(tiers) == ["tier_1", "tier_5", "tier_unlimited"]
+    assert sorted(tiers) == ["tier_1", "tier_5", "tier_free", "tier_unlimited"]
 
 
 def test_tier_1_caps_features():
@@ -115,6 +115,78 @@ def test_validate_passes_when_within_limits():
         replay_enabled=True,  # tier_5 has replay_mode
         current_machine_count=0,
     )  # no exception = pass
+
+
+def test_tier_free_basic_features_and_retention():
+    tier = load_tier("tier_free")
+    assert tier.max_machines == 1
+    assert tier.max_steps_per_machine == 5
+    assert tier.data_retention_days == 7
+    assert tier.has_feature("cycle_analytics")
+    assert tier.has_feature("cycle_variance")
+    assert not tier.has_feature("oee_analytics")
+    assert not tier.has_feature("replay_mode")
+    assert not tier.has_feature("event_log")
+
+
+def test_tier_free_rank_below_tier_1():
+    """tier_free cannot satisfy tier_1 requirements."""
+    tf = load_tier("tier_free")
+    t1 = load_tier("tier_1")
+    assert tf.rank < t1.rank
+    assert tf.allows("tier_free")
+    assert not tf.allows("tier_1")
+
+
+def test_tier_1_allows_tier_free():
+    """All paid tiers satisfy tier_free requirements."""
+    t1 = load_tier("tier_1")
+    assert t1.allows("tier_free")
+
+
+def test_validate_refuses_tier_1_machine_on_free():
+    tier = load_tier("tier_free")
+    with pytest.raises(TierError, match="tier_1"):
+        validate_machine_requirements(
+            tier,
+            machine_id="m_paid",
+            tier_required="tier_1",
+            total_steps=3,
+            replay_enabled=False,
+            current_machine_count=0,
+        )
+
+
+def test_validate_refuses_too_many_steps_on_free():
+    tier = load_tier("tier_free")  # max_steps=5
+    with pytest.raises(TierError, match="caps at"):
+        validate_machine_requirements(
+            tier,
+            machine_id="m_big",
+            tier_required="tier_free",
+            total_steps=6,
+            replay_enabled=False,
+            current_machine_count=0,
+        )
+
+
+def test_validate_passes_on_free_tier():
+    tier = load_tier("tier_free")
+    validate_machine_requirements(
+        tier,
+        machine_id="m_free",
+        tier_required="tier_free",
+        total_steps=5,
+        replay_enabled=False,
+        current_machine_count=0,
+    )  # no exception = pass
+
+
+def test_paid_tiers_unlimited_retention():
+    """Paid tiers should have data_retention_days=0 (unlimited)."""
+    for tid in ("tier_1", "tier_5", "tier_unlimited"):
+        tier = load_tier(tid)
+        assert tier.data_retention_days == 0, f"{tid} should have unlimited retention"
 
 
 def test_unknown_tier_raises():

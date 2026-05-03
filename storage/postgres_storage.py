@@ -8,11 +8,12 @@ Multi-tenant support, production-grade reliability.
 Architecture layer: STORAGE LAYER
 """
 
+from datetime import datetime
 from typing import List, Optional
 from loguru import logger
 
 from .base_storage import BaseStorage
-from core.data_model import CycleLog, CycleStats
+from core.data_model import CycleLog, CycleStats, EventLogEntry, OEESnapshot
 
 
 class PostgresStorage(BaseStorage):
@@ -68,3 +69,36 @@ class PostgresStorage(BaseStorage):
     ) -> Optional[CycleStats]:
         """Get step statistics from PostgreSQL."""
         raise NotImplementedError("PostgreSQL get_step_stats — TODO")
+
+    async def get_last_cycle_id(self, machine_id: str) -> int:
+        raise NotImplementedError("PostgreSQL get_last_cycle_id — TODO")
+
+    async def save_oee_snapshot(self, snapshot: OEESnapshot) -> bool:
+        raise NotImplementedError("PostgreSQL save_oee_snapshot — TODO")
+
+    async def get_recent_oee(
+        self, machine_id: str, limit: int = 100
+    ) -> List[OEESnapshot]:
+        raise NotImplementedError("PostgreSQL get_recent_oee — TODO")
+
+    async def save_event(self, event: EventLogEntry) -> EventLogEntry:
+        raise NotImplementedError("PostgreSQL save_event — TODO")
+
+    async def get_events(
+        self,
+        machine_id: str,
+        limit: int = 100,
+        severity: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> List[EventLogEntry]:
+        raise NotImplementedError("PostgreSQL get_events — TODO")
+
+    async def acknowledge_event(
+        self, event_id: int, *, acknowledged_by: str
+    ) -> Optional[EventLogEntry]:
+        raise NotImplementedError("PostgreSQL acknowledge_event — TODO")
+
+    async def delete_old_data(
+        self, cutoff: datetime, *, machine_id: Optional[str] = None
+    ) -> int:
+        raise NotImplementedError("PostgreSQL delete_old_data — TODO")

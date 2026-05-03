@@ -27,3 +27,6 @@ features:
 
 # Replay retention (only relevant if replay_mode enabled)
 replay_retention_hours: 0
+
+# Data retention (0 = unlimited)
+data_retention_days: 0

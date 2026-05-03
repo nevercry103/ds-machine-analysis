@@ -20,6 +20,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    delete,
     func,
     select,
 )
@@ -495,6 +496,58 @@ class SqliteStorage(BaseStorage):
                 row.acknowledged_by = acknowledged_by
                 row.acknowledged_at = _utc_now()
             return self._to_event(row)
+
+    async def delete_old_data(
+        self, cutoff: datetime, *, machine_id: Optional[str] = None
+    ) -> int:
+        """Purge cycles, OEE snapshots, and events older than *cutoff*."""
+        if self._session_factory is None:
+            raise RuntimeError("SQLite storage is not connected")
+
+        total = 0
+        async with self._session_factory() as session:
+            async with session.begin():
+                # Cycles (cascade deletes step_logs via FK)
+                cycle_stmt = delete(CycleLogORM).where(
+                    CycleLogORM.timestamp_end < cutoff
+                )
+                if machine_id is not None:
+                    cycle_stmt = cycle_stmt.where(
+                        CycleLogORM.machine_id == machine_id
+                    )
+                result = await session.execute(cycle_stmt)
+                total += result.rowcount
+
+                # OEE snapshots
+                oee_stmt = delete(OEESnapshotORM).where(
+                    OEESnapshotORM.window_end < cutoff
+                )
+                if machine_id is not None:
+                    oee_stmt = oee_stmt.where(
+                        OEESnapshotORM.machine_id == machine_id
+                    )
+                result = await session.execute(oee_stmt)
+                total += result.rowcount
+
+                # Events
+                event_stmt = delete(EventLogORM).where(
+                    EventLogORM.timestamp < cutoff
+                )
+                if machine_id is not None:
+                    event_stmt = event_stmt.where(
+                        EventLogORM.machine_id == machine_id
+                    )
+                result = await session.execute(event_stmt)
+                total += result.rowcount
+
+        if total > 0:
+            log.info(
+                "Retention cleanup complete",
+                cutoff=cutoff.isoformat(),
+                machine_id=machine_id,
+                rows_deleted=total,
+            )
+        return total
 
     @staticmethod
     def _to_event(row: EventLogORM) -> EventLogEntry:

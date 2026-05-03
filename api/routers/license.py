@@ -46,5 +46,6 @@ async def get_license(request: Request) -> dict:
         "current_machines": len(state.registry),
         "features": tier.features.model_dump(),
         "replay_retention_hours": tier.replay_retention_hours,
+        "data_retention_days": tier.data_retention_days,
         "available_tiers": list_available_tiers(),
     }

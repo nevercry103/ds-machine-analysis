@@ -124,3 +124,17 @@ class BaseStorage(ABC):
     ) -> Optional[EventLogEntry]:
         """Mark an event acknowledged. Returns the updated entry, or None."""
         pass
+
+    # ------------------------------------------------------------------
+    # Data Retention
+    # ------------------------------------------------------------------
+    @abstractmethod
+    async def delete_old_data(
+        self, cutoff: datetime, *, machine_id: Optional[str] = None
+    ) -> int:
+        """Delete cycles, OEE snapshots, and events older than *cutoff*.
+
+        Returns the total number of rows deleted across all tables.
+        When *machine_id* is given, only that machine's data is purged.
+        """
+        pass
