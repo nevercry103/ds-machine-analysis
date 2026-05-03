@@ -32,6 +32,7 @@ from ui.widgets import (
     EventLogWidget,
     MachineManagerWidget,
     OEEDashboardWidget,
+    ReplayWidget,
 )
 from ui.ws_client import MachineWSClient
 from utils.logger import log
@@ -62,9 +63,11 @@ class MainWindow(QMainWindow):
         self._gantt = CycleGanttWidget(self._api)
         self._oee = OEEDashboardWidget(self._api)
         self._events = EventLogWidget(self._api)
+        self._replay = ReplayWidget(self._api)
         self._tabs.addTab(self._gantt, "Cycle Gantt")
         self._tabs.addTab(self._oee, "OEE")
         self._tabs.addTab(self._events, "Events")
+        self._tabs.addTab(self._replay, "Replay")
 
         # Wire machine selection to all detail panes
         self._machines.machineSelected.connect(self._on_machine_selected)
@@ -100,6 +103,7 @@ class MainWindow(QMainWindow):
         self._gantt.set_machine(machine_id)
         self._oee.set_machine(machine_id)
         self._events.set_machine(machine_id)
+        self._replay.set_machine(machine_id)
         self._start_ws(machine_id)
 
     def _start_ws(self, machine_id: str) -> None:

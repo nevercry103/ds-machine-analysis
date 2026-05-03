@@ -99,6 +99,29 @@ class StepStats:
     cv_pct: float
 
 
+@dataclass(frozen=True)
+class ReplayStep:
+    """One step in a replay — includes tag values snapshot."""
+
+    index: int
+    name: str
+    duration_ms: int
+    started_at: str
+    ended_at: str
+    tag_values: dict
+
+
+@dataclass(frozen=True)
+class CycleReplay:
+    """Full replay of a past cycle — engineer scrubs through steps."""
+
+    machine_id: str
+    cycle_id: int
+    total_ms: int
+    steps: list[ReplayStep]
+    replay_tag_count: int
+
+
 class ApiClient:
     """Thin sync HTTP client. Re-uses one `httpx.Client` for keep-alive."""
 
@@ -172,6 +195,28 @@ class ApiClient:
             )
             for r in rows
         ]
+
+    # ---- Replay Mode (F-005) --------------------------------------------
+
+    def get_cycle_replay(self, machine_id: str, cycle_id: int) -> CycleReplay:
+        row = self._get_json(f"/api/machines/{machine_id}/cycles/{cycle_id}/replay")
+        return CycleReplay(
+            machine_id=row["machine_id"],
+            cycle_id=int(row["cycle_id"]),
+            total_ms=int(row.get("total_ms", 0)),
+            steps=[
+                ReplayStep(
+                    index=int(s["index"]),
+                    name=s.get("name", f"Step {s['index']}"),
+                    duration_ms=int(s.get("duration_ms", 0)),
+                    started_at=s.get("started_at", ""),
+                    ended_at=s.get("ended_at", ""),
+                    tag_values=s.get("tag_values", {}),
+                )
+                for s in row.get("steps", [])
+            ],
+            replay_tag_count=int(row.get("replay_tag_count", 0)),
+        )
 
     # ---- Step stats ------------------------------------------------------
 
