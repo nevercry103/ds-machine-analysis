@@ -32,10 +32,17 @@ def _state(request: Request) -> AppState:
     return state
 
 
+def _max_cv_pct(handle: MachineHandle) -> float | None:
+    """Highest CV% across all steps — headline Cycle Variance KPI."""
+    stats = handle.processor.step_stats
+    if not stats:
+        return None
+    val = max(s.cv_pct for s in stats)
+    return round(val, 2) if val > 0 else None
+
+
 def _summarize(handle: MachineHandle) -> MachineSummary:
     proc = handle.processor
-    stats = proc.step_stats
-    max_cv = max((s.cv_pct for s in stats), default=None) if stats else None
     return MachineSummary(
         id=handle.machine_id,
         name=handle.config.machine_name,
@@ -46,7 +53,7 @@ def _summarize(handle: MachineHandle) -> MachineSummary:
         last_cycle_ms=int(proc.last_total_ms) if proc.last_total_ms else None,
         last_cycle_id=proc.last_cycle_id or None,
         cycle_count=proc.cycle_count,
-        max_cv_pct=round(max_cv, 2) if max_cv is not None and max_cv > 0 else None,
+        max_cv_pct=_max_cv_pct(handle),
     )
 
 
@@ -79,11 +86,7 @@ async def list_recent_cycles(
         raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
 
     cycles = await state.storage.get_cycles(machine_id, limit=limit)
-
-    # Rolling CV% from the processor — snapshot at query time.
-    proc_stats = handle.processor.step_stats
-    max_cv = max((s.cv_pct for s in proc_stats), default=None) if proc_stats else None
-    max_cv_rounded = round(max_cv, 2) if max_cv is not None and max_cv > 0 else None
+    max_cv_rounded = _max_cv_pct(handle)
 
     out: list[CycleSummary] = []
     for cycle in cycles:

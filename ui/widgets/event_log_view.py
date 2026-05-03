@@ -10,7 +10,6 @@ Architecture rule: UI consumes the API only — no direct core imports.
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
@@ -23,14 +22,8 @@ from PyQt6.QtWidgets import (
 )
 
 from ui.api_client import ApiClient, ApiError, EventEntry
+from ui.theme import SEVERITY_COLORS, format_iso_time
 from utils.logger import log
-
-_SEVERITY_COLORS = {
-    "critical": QColor("#ef4444"),  # red-500
-    "error": QColor("#f97316"),     # orange-500
-    "warning": QColor("#eab308"),   # yellow-500
-    "info": QColor("#3b82f6"),      # blue-500
-}
 
 
 class EventLogWidget(QWidget):
@@ -105,14 +98,12 @@ class EventLogWidget(QWidget):
 
     def _populate_row(self, row: int, ev: EventEntry) -> None:
         # Time — show just time portion if today, else full
-        ts = ev.timestamp
-        if "T" in ts:
-            ts = ts.split("T")[1][:8]  # HH:MM:SS
+        ts = format_iso_time(ev.timestamp)
         self._table.setItem(row, 0, QTableWidgetItem(ts))
 
         # Severity with color
         sev_item = QTableWidgetItem(ev.severity)
-        color = _SEVERITY_COLORS.get(ev.severity)
+        color = SEVERITY_COLORS.get(ev.severity)
         if color:
             sev_item.setForeground(color)
         self._table.setItem(row, 1, sev_item)

@@ -10,7 +10,6 @@ Architecture rule: UI consumes the API only — no direct core imports.
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -25,6 +24,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ui.api_client import ApiClient, ApiError, CycleReplay, ReplayStep
+from ui.theme import GRAY_400, GREEN_500, RED_500, format_iso_time
 from utils.logger import log
 
 
@@ -176,12 +176,8 @@ class ReplayWidget(QWidget):
         )
 
         # Timing
-        started = step.started_at
-        ended = step.ended_at
-        if "T" in started:
-            started = started.split("T")[1][:12]
-        if "T" in ended:
-            ended = ended.split("T")[1][:12]
+        started = format_iso_time(step.started_at, precision=12)
+        ended = format_iso_time(step.ended_at, precision=12)
         self._timing_label.setText(f"Start: {started}  →  End: {ended}")
 
         # Tag values
@@ -193,9 +189,7 @@ class ReplayWidget(QWidget):
 
             # Color bool values
             if isinstance(tag_val, bool):
-                val_item.setForeground(
-                    QColor("#22c55e") if tag_val else QColor("#ef4444")
-                )
+                val_item.setForeground(GREEN_500 if tag_val else RED_500)
 
             self._tag_table.setItem(row, 0, name_item)
             self._tag_table.setItem(row, 1, val_item)
@@ -203,6 +197,6 @@ class ReplayWidget(QWidget):
         if not tags:
             self._tag_table.setRowCount(1)
             empty = QTableWidgetItem("No replay tags configured for this machine")
-            empty.setForeground(QColor("#9ca3af"))
+            empty.setForeground(GRAY_400)
             self._tag_table.setItem(0, 0, empty)
             self._tag_table.setItem(0, 1, QTableWidgetItem(""))

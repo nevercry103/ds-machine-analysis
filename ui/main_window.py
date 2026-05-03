@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
 
         # Wire machine selection to all detail panes
         self._machines.machineSelected.connect(self._on_machine_selected)
+        self._tabs.currentChanged.connect(self._on_tab_changed)
 
         # ---- Layout ----
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
@@ -94,22 +95,43 @@ class MainWindow(QMainWindow):
         status_bar.addPermanentWidget(self._api_status)
         self._refresh_api_status()
 
-        log.info("MainWindow initialized", api_base=self._api._base_url)  # noqa: SLF001
+        log.info("MainWindow initialized", api_base=self._api.base_url)
 
     # ---- machine selection + WS lifecycle --------------------------------
 
     def _on_machine_selected(self, machine_id: str) -> None:
-        """Switch all detail panes to the selected machine and start WS."""
-        self._gantt.set_machine(machine_id)
-        self._oee.set_machine(machine_id)
-        self._events.set_machine(machine_id)
-        self._replay.set_machine(machine_id)
+        """Switch all detail panes to the selected machine and start WS.
+
+        Only the currently visible tab fetches eagerly; hidden tabs defer
+        their API call until the user switches to them (lazy-load).
+        """
+        self._selected_machine_id = machine_id
+        self._load_active_tab(machine_id)
         self._start_ws(machine_id)
+
+    def _on_tab_changed(self, _index: int) -> None:
+        """Lazy-load: fetch data when a previously hidden tab becomes visible."""
+        mid = getattr(self, "_selected_machine_id", None)
+        if mid:
+            self._load_active_tab(mid)
+
+    def _load_active_tab(self, machine_id: str) -> None:
+        """Trigger set_machine only on the currently active tab widget."""
+        current = self._tabs.currentWidget()
+        tab_map = {
+            self._gantt: self._gantt,
+            self._oee: self._oee,
+            self._events: self._events,
+            self._replay: self._replay,
+        }
+        widget = tab_map.get(current)
+        if widget is not None:
+            widget.set_machine(machine_id)
 
     def _start_ws(self, machine_id: str) -> None:
         self._stop_ws()
         self._ws = MachineWSClient(
-            self._api._base_url,  # noqa: SLF001
+            self._api.base_url,
             machine_id,
             parent=self,
         )

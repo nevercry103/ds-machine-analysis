@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PyQt6.QtCore import QPoint, QRect, QRectF, Qt
+from PyQt6.QtCore import QPoint, QRect, Qt
 from PyQt6.QtGui import (
     QBrush,
     QColor,
@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
 )
 
 from ui.api_client import ApiClient, ApiError, CycleSummary
+from ui.theme import BLUE_400, BLUE_500, GRAY_200, GRAY_800, RED_400, RED_500
 from utils.logger import log
 
 
@@ -60,12 +61,12 @@ class _GanttCanvas(QWidget):
     RIGHT_PAD = 80
     HEADER_HEIGHT = 40
 
-    NORMAL_COLOR = QColor("#3b82f6")       # blue-500
-    HOVER_COLOR = QColor("#60a5fa")        # blue-400
-    BOTTLENECK_COLOR = QColor("#ef4444")   # red-500
-    BOTTLENECK_HOVER = QColor("#f87171")   # red-400
-    GRID_COLOR = QColor("#e5e7eb")
-    TEXT_COLOR = QColor("#1f2937")
+    NORMAL_COLOR = BLUE_500
+    HOVER_COLOR = BLUE_400
+    BOTTLENECK_COLOR = RED_500
+    BOTTLENECK_HOVER = RED_400
+    GRID_COLOR = GRAY_200
+    TEXT_COLOR = GRAY_800
 
     ZOOM_MIN = 1.0
     ZOOM_MAX = 5.0

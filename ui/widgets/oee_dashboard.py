@@ -14,17 +14,15 @@ from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPaintEvent, QPen
 from PyQt6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget, QLabel
 
 from ui.api_client import ApiClient, ApiError, OEESnapshot
+from ui.theme import GRAY_200, GRAY_800, oee_color
 from utils.logger import log
 
 
 class _OEEGauge(QWidget):
     """Circular OEE gauge + A/P/Q bar breakdown."""
 
-    GOOD = QColor("#22c55e")   # green-500
-    OKAY = QColor("#eab308")   # yellow-500
-    BAD = QColor("#ef4444")    # red-500
-    TRACK = QColor("#e5e7eb")  # gray-200
-    TEXT = QColor("#1f2937")   # gray-800
+    TRACK = GRAY_200
+    TEXT = GRAY_800
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -52,13 +50,6 @@ class _OEEGauge(QWidget):
         finally:
             painter.end()
 
-    def _oee_color(self, value: float) -> QColor:
-        if value >= 0.85:
-            return self.GOOD
-        if value >= 0.60:
-            return self.OKAY
-        return self.BAD
-
     def _draw(self, p: QPainter, s: OEESnapshot) -> None:
         w = self.width()
 
@@ -75,7 +66,7 @@ class _OEEGauge(QWidget):
         p.drawArc(arc_rect, 225 * 16, -270 * 16)
 
         # Fill
-        color = self._oee_color(s.oee)
+        color = oee_color(s.oee)
         p.setPen(QPen(color, pen_w, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         span = int(-270 * 16 * s.oee)
         p.drawArc(arc_rect, 225 * 16, span)
@@ -128,7 +119,7 @@ class _OEEGauge(QWidget):
 
             # Fill
             fill_w = max(0, int(bar_width * val))
-            p.setBrush(QBrush(self._oee_color(val)))
+            p.setBrush(QBrush(oee_color(val)))
             p.drawRoundedRect(bar_left, y + 2, fill_w, bar_h, 4, 4)
 
         # --- Cycle counts ---

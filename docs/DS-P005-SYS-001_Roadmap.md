@@ -8,8 +8,8 @@
 |-------|-------|
 | Document | DS Machine Analyzer Platform — Roadmap |
 | Doc ID | DS-P005-SYS-001 |
-| Version | 1.1 |
-| Date | 2026-05-02 |
+| Version | 1.2 |
+| Date | 2026-05-03 |
 | Author | Ha (OT Lead) + Claude Code |
 | Status | ACTIVE — Phase 1 |
 | Confidential | Yes |
@@ -20,6 +20,7 @@
 |-----|------|---------|
 | 1.0 | 2026-05-02 | Initial 5-phase 12-month plan |
 | 1.1 | 2026-05-02 | API-first + PWA architecture (F-001), Cycle Variance headline metric, PLC code generator, Replay Mode, Machine Packs, multi-PLC per machine |
+| 1.2 | 2026-05-03 | Competitive gap analysis (F-006): MQTT export, machine logbook, free tier, push notifications added to Phase 2-3 |
 
 ---
 
@@ -146,7 +147,8 @@ Decision recorded as **F-001** (`project_findings_log.md`). Bolting API on later
 - WebSocket: `cycle_anomaly` event when variance > threshold
 
 **Tier gating (mirror ds-vision):**
-- Tier profiles: tier_1_machine / tier_5_machines / tier_unlimited
+- Tier profiles: tier_free / tier_1_machine / tier_5_machines / tier_unlimited
+- `tier_free`: 1 machine, 7-day data retention — lowers adoption barrier (gap vs. Schneider EcoStruxure)
 - Recipe (machine config) declares `tier_required`
 - Platform refuses to load if license tier insufficient
 
@@ -167,7 +169,12 @@ Decision recorded as **F-001** (`project_findings_log.md`). Bolting API on later
 - Keyboard shortcuts (engineer power-user)
 - Gantt interactivity (zoom, hover, click-into)
 - Error boundary + graceful degradation (PWA shows cached data when API offline)
-- **Push notifications** working: alarm/NG → operator's phone
+- **Push notifications** working: alarm/NG/CV% threshold → operator's phone (Web Push API + email)
+
+**Integration & IoT (NEW — competitive gap F-006):**
+- **MQTT publish** for cycle/alarm/anomaly events — enables MES/SCADA/Historian integration (gap vs. Beckhoff/Siemens)
+- **Machine logbook** — maintenance notes, task management, document attachments per machine (gap vs. Schneider EcoStruxure)
+- `GET /api/machines/{id}/logbook` + `POST` endpoints
 
 **Documentation:**
 - Operator manual (DS-P005-OPR-001) — bilingual EN/VI
@@ -198,6 +205,10 @@ Decision recorded as **F-001** (`project_findings_log.md`). Bolting API on later
 - ADS — Beckhoff TwinCAT
 - MC Protocol — Mitsubishi
 - Multi-PLC per machine: 1 logical machine = N physical PLCs (unified clock)
+
+**Analytics (competitive gap F-006):**
+- **Tag trending / time-series charting** via TimescaleDB continuous aggregates
+- **Anomaly detection ML** — isolation forest or z-score on Cycle Variance history (gap vs. Siemens Insights Hub, Rockwell LogixAI)
 
 **Scale & monitoring:**
 - Load testing (1000 cycles/min × 10 machines)
@@ -301,5 +312,5 @@ Realistic with team-of-1 + Claude Code: 18-24 months stretched
 ---
 
 **Document Owner:** Ha (OT Lead)
-**Last Updated:** 2026-05-02
-**Status:** v1.1 — API-first + PWA + innovations integrated
+**Last Updated:** 2026-05-03
+**Status:** v1.2 — Competitive gap analysis integrated (MQTT, logbook, free tier, ML anomaly)

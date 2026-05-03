@@ -149,3 +149,72 @@ This is an architectural commitment to be made now (machine_registry / data_bus 
 - Real-mode `OpcUaAdapter._read_cycle_log()` UDT_CycleLog parser — wired against pilot S7-1500 firmware.
 
 These three are physical-world validation tasks that can't close from a code-only session. Phase 1 → Phase 2 gate (target 2026-07-02) cannot flip until they do.
+
+---
+
+## F-006 — Competitive gap analysis: Siemens / Rockwell / Beckhoff / Schneider
+
+| Field | Value |
+|---|---|
+| Status | OPEN |
+| Phase | 2-4 |
+| Date | 2026-05-03 |
+| Author | Ha + Claude Code |
+
+**Context.** Reviewed four PLC vendor analytics platforms (Siemens Insights Hub/MindSphere, Rockwell FactoryTalk Analytics, Beckhoff TwinCAT Analytics, Schneider EcoStruxure Machine Advisor) plus two pure-play competitors (Tulip, MachineMetrics) to identify feature gaps and confirm DS-MA's unique advantages.
+
+**DS-MA unique advantages confirmed (no competitor has all of these):**
+1. YAML → PLC code generator (nobody else touches the PLC side)
+2. Replay Mode — time-travel debugging with tag snapshots per step
+3. Cycle Variance as headline KPI — leading indicator, not lagging
+4. Multi-brand PLC support from day 1 (6 protocols)
+5. Edge-first, cloud-optional (factory laptop deployment)
+6. Open config — customer owns YAML + packs
+
+**Gaps identified:**
+
+| Priority | Gap | Competitor source | Target phase |
+|---|---|---|---|
+| High | MQTT/IoT event export | Beckhoff, Siemens | Phase 3 |
+| High | Machine logbook (maintenance notes, task mgmt, docs per machine) | Schneider EcoStruxure | Phase 3 |
+| High | Free tier for 1 machine (tier_free, 7-day retention) | Schneider EcoStruxure | Phase 2 |
+| Medium | Anomaly detection ML (isolation forest / z-score on variance history) | Siemens, Rockwell LogixAI | Phase 4 |
+| Medium | Tag trending / time-series charting (TimescaleDB) | Rockwell, Beckhoff | Phase 4 |
+| Medium | Push notifications (PWA push + email on CV% threshold / alarm) | All competitors | Phase 3 |
+| Low | Remote PLC access | Schneider | Phase 5 |
+
+**Action.**
+- [ ] Add `tier_free` to tier_profiles (1 machine, 7-day retention) — Phase 2
+- [ ] MQTT publish for cycle/alarm events — Phase 3
+- [ ] Machine logbook model + API endpoint — Phase 3
+- [ ] Push notification via Web Push API — Phase 3
+- [ ] TimescaleDB time-series queries + tag trending UI — Phase 4
+- [ ] Anomaly detection (simple ML) on variance history — Phase 4
+
+---
+
+## F-007 — Code quality: shared UI theme + lazy tab loading
+
+| Field | Value |
+|---|---|
+| Status | CLOSED |
+| Phase | 2 |
+| Date | 2026-05-03 |
+| Author | Claude Code `/simplify` review |
+
+**Context.** Code review (3-agent `/simplify` pass: reuse, quality, efficiency) found:
+- Color hex values duplicated across 4 widget files (cycle_gantt, oee_dashboard, event_log, replay)
+- `max_cv_pct` computation duplicated in two API router functions
+- ISO timestamp splitting duplicated in event_log and replay widgets
+- `ApiClient._base_url` accessed as private attribute from `MainWindow`
+- All 4 detail tabs fetched data on machine selection even when hidden
+- Unused `QRectF` import in cycle_gantt
+
+**Action.**
+- [x] Created `ui/theme.py` — shared color palette (BLUE_500, RED_500, etc.), `SEVERITY_COLORS` dict, `oee_color()` function, `format_iso_time()` helper
+- [x] Updated all 4 widgets to import from `ui/theme.py` instead of inline `QColor("#...")`
+- [x] Extracted `_max_cv_pct()` helper in `api/routers/machines.py`
+- [x] Added `ApiClient.base_url` public property; removed `# noqa: SLF001` in main_window
+- [x] Lazy tab loading: only active tab fetches on machine selection; `currentChanged` signal triggers load for newly visible tabs
+- [x] Removed unused `QRectF` import
+- [x] All 76 tests green

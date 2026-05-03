@@ -129,6 +129,10 @@ class ApiClient:
         self._base_url = base_url.rstrip("/")
         self._client = httpx.Client(base_url=self._base_url, timeout=timeout)
 
+    @property
+    def base_url(self) -> str:
+        return self._base_url
+
     def close(self) -> None:
         self._client.close()
 
