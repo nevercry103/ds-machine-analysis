@@ -17,6 +17,7 @@ from storage.base_storage import BaseStorage
 from utils.logger import log
 
 from .config_model import MachineConfigSchema
+from .anomaly_detector import AnomalyDetector
 from .cycle_processor import CycleProcessor
 from .data_bus import MachineDataBus
 from .data_model import MachineConfig, MachineStatus
@@ -40,6 +41,7 @@ class MachineHandle:
         processor: CycleProcessor,
         oee: OEEProcessor | None = None,
         events: EventLogger | None = None,
+        anomaly: AnomalyDetector | None = None,
     ) -> None:
         self.config = config
         self.bus = bus
@@ -47,6 +49,7 @@ class MachineHandle:
         self.processor = processor
         self.oee = oee
         self.events = events
+        self.anomaly = anomaly
 
     @property
     def machine_id(self) -> str:
@@ -161,8 +164,11 @@ class MachineRegistry:
                     tier=self.tier.tier_id if self.tier else None,
                 )
 
+            anomaly_detector = AnomalyDetector(machine_id=config.machine_id)
+
             handle = MachineHandle(
-                config, bus, adapter, processor, oee=oee_processor, events=event_logger
+                config, bus, adapter, processor,
+                oee=oee_processor, events=event_logger, anomaly=anomaly_detector,
             )
             self._handles[config.machine_id] = handle
             log.info(

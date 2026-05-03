@@ -10,22 +10,19 @@ from core.data_bus import MachineDataBus
 from core.data_model import MachineConfig
 
 from .base_adapter import BaseProtocolAdapter
+from .modbus_adapter import ModbusAdapter
 from .opcua_adapter import OpcUaAdapter
 
-__all__ = ["BaseProtocolAdapter", "OpcUaAdapter", "build_adapter"]
+__all__ = ["BaseProtocolAdapter", "ModbusAdapter", "OpcUaAdapter", "build_adapter"]
 
 
 def build_adapter(config: MachineConfig, bus: MachineDataBus) -> BaseProtocolAdapter:
-    """Factory: pick the adapter class matching `config.protocol_type`.
-
-    Phase 1 supports only OPC-UA (real + simulator). Other protocols
-    raise NotImplementedError until their adapters land.
-    """
+    """Factory: pick the adapter class matching `config.protocol_type`."""
     proto = config.protocol.type.lower()
     if proto == "opcua":
         return OpcUaAdapter(config, bus)
     if proto in {"modbus_tcp", "modbus_rtu"}:
-        raise NotImplementedError("Modbus adapter — TODO Phase 4")
+        return ModbusAdapter(config, bus)
     if proto == "ethernet_ip":
         raise NotImplementedError("EtherNet/IP adapter — TODO Phase 4")
     if proto == "ads":

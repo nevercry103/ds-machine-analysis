@@ -533,3 +533,34 @@ async def update_logbook_entry(
     if updated is None:
         raise HTTPException(status_code=404, detail=f"Logbook entry {entry_id} not found")
     return _logbook_response(updated)
+
+
+# ---- Anomaly Detection (F-006 — Phase 4 ML) -------------------------
+
+@router.get("/{machine_id}/anomalies")
+async def detect_anomalies(machine_id: str, request: Request) -> list[dict]:
+    """Run anomaly detection on current step stats.
+
+    Returns per-step z-score evaluation against the rolling baseline.
+    Steps flagged as anomalous have `is_anomaly: true`.
+    """
+    state = _state(request)
+    handle = state.registry.get(machine_id)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
+    if handle.anomaly is None:
+        return []
+    results = handle.anomaly.evaluate_all(handle.processor.step_stats)
+    return [
+        {
+            "step_index": r.step_index,
+            "step_name": r.step_name,
+            "cv_pct": r.cv_pct,
+            "z_score": r.z_score,
+            "is_anomaly": r.is_anomaly,
+            "baseline_mean": r.baseline_mean,
+            "baseline_std": r.baseline_std,
+            "window_size": r.window_size,
+        }
+        for r in results
+    ]

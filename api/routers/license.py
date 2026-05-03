@@ -9,7 +9,9 @@ endpoint changes the tier; that requires a license-key swap + restart.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel, Field
 
+from api.middleware.auth import Role, create_token
 from api.state import AppState
 from core.tier_profile import TierProfile, list_available_tiers
 
@@ -49,3 +51,44 @@ async def get_license(request: Request) -> dict:
         "data_retention_days": tier.data_retention_days,
         "available_tiers": list_available_tiers(),
     }
+
+
+class TokenRequest(BaseModel):
+    """Request body for token creation."""
+    role: str = Field(..., description="operator | engineer | manager | executive")
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    role: str
+    expires_hours: int
+
+
+@router.post("/token", response_model=TokenResponse)
+async def create_auth_token(body: TokenRequest) -> TokenResponse:
+    """Issue a JWT for the given role.
+
+    In production this would be behind an admin auth gate or replaced
+    by SSO/LDAP integration. For now it's open so engineers can test
+    role-based access on the PWA and desktop.
+    """
+    try:
+        role = Role(body.role.lower())
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown role {body.role!r}. Allowed: {[r.value for r in Role]}",
+        )
+    try:
+        token = create_token(role)
+    except ImportError:
+        raise HTTPException(
+            status_code=501,
+            detail="python-jose not installed — cannot create tokens",
+        )
+    return TokenResponse(
+        access_token=token,
+        role=role.value,
+        expires_hours=24,
+    )
