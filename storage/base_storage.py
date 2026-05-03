@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from datetime import datetime
 
-from core.data_model import CycleLog, CycleStats, EventLogEntry, OEESnapshot
+from core.data_model import CycleLog, CycleStats, EventLogEntry, LogbookEntry, OEESnapshot
 
 
 class BaseStorage(ABC):
@@ -137,4 +137,43 @@ class BaseStorage(ABC):
         Returns the total number of rows deleted across all tables.
         When *machine_id* is given, only that machine's data is purged.
         """
+        pass
+
+    # ------------------------------------------------------------------
+    # Machine Logbook (F-006)
+    # ------------------------------------------------------------------
+    @abstractmethod
+    async def save_logbook_entry(self, entry: LogbookEntry) -> LogbookEntry:
+        """Persist a logbook entry; returns the entry with its id set."""
+        pass
+
+    @abstractmethod
+    async def get_logbook_entries(
+        self,
+        machine_id: str,
+        limit: int = 100,
+        entry_type: Optional[str] = None,
+    ) -> List[LogbookEntry]:
+        """Return logbook entries for a machine, newest first."""
+        pass
+
+    @abstractmethod
+    async def get_logbook_entry(
+        self, entry_id: int
+    ) -> Optional[LogbookEntry]:
+        """Get a single logbook entry by id."""
+        pass
+
+    @abstractmethod
+    async def update_logbook_entry(
+        self,
+        entry_id: int,
+        *,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        attachments: Optional[List[str]] = None,
+        resolved: Optional[bool] = None,
+    ) -> Optional[LogbookEntry]:
+        """Update fields on a logbook entry. Returns updated entry or None."""
         pass

@@ -184,9 +184,9 @@ These three are physical-world validation tasks that can't close from a code-onl
 | Low | Remote PLC access | Schneider | Phase 5 |
 
 **Action.**
-- [ ] Add `tier_free` to tier_profiles (1 machine, 7-day retention) — Phase 2
-- [ ] MQTT publish for cycle/alarm events — Phase 3
-- [ ] Machine logbook model + API endpoint — Phase 3
+- [x] Add `tier_free` to tier_profiles (1 machine, 7-day retention) — Phase 2 ✓
+- [x] MQTT publish for cycle/alarm events — Phase 3 ✓
+- [x] Machine logbook model + API endpoint — Phase 3 ✓
 - [ ] Push notification via Web Push API — Phase 3
 - [ ] TimescaleDB time-series queries + tag trending UI — Phase 4
 - [ ] Anomaly detection (simple ML) on variance history — Phase 4

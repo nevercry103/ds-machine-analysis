@@ -13,7 +13,7 @@ from typing import List, Optional
 from loguru import logger
 
 from .base_storage import BaseStorage
-from core.data_model import CycleLog, CycleStats, EventLogEntry, OEESnapshot
+from core.data_model import CycleLog, CycleStats, EventLogEntry, LogbookEntry, OEESnapshot
 
 
 class PostgresStorage(BaseStorage):
@@ -102,3 +102,29 @@ class PostgresStorage(BaseStorage):
         self, cutoff: datetime, *, machine_id: Optional[str] = None
     ) -> int:
         raise NotImplementedError("PostgreSQL delete_old_data — TODO")
+
+    async def save_logbook_entry(self, entry: LogbookEntry) -> LogbookEntry:
+        raise NotImplementedError("PostgreSQL save_logbook_entry — TODO")
+
+    async def get_logbook_entries(
+        self,
+        machine_id: str,
+        limit: int = 100,
+        entry_type: Optional[str] = None,
+    ) -> List[LogbookEntry]:
+        raise NotImplementedError("PostgreSQL get_logbook_entries — TODO")
+
+    async def get_logbook_entry(self, entry_id: int) -> Optional[LogbookEntry]:
+        raise NotImplementedError("PostgreSQL get_logbook_entry — TODO")
+
+    async def update_logbook_entry(
+        self,
+        entry_id: int,
+        *,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        attachments: Optional[List[str]] = None,
+        resolved: Optional[bool] = None,
+    ) -> Optional[LogbookEntry]:
+        raise NotImplementedError("PostgreSQL update_logbook_entry — TODO")

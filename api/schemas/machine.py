@@ -124,3 +124,45 @@ class DowntimeRequest(BaseModel):
 
 class EventAckRequest(BaseModel):
     acknowledged_by: str = Field(..., min_length=1, max_length=128)
+
+
+# ---- Machine Logbook (F-006 — competitive gap vs Schneider) ----------
+
+class LogbookEntryResponse(BaseModel):
+    """One logbook entry — maintenance notes, tasks, docs per machine."""
+
+    id: int
+    machine_id: str
+    entry_type: str
+    title: str
+    body: str
+    author: str
+    tags: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
+    resolved: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class LogbookCreateRequest(BaseModel):
+    """POST body for creating a logbook entry."""
+
+    entry_type: str = Field(
+        "note",
+        description="note | maintenance | task | document | incident",
+    )
+    title: str = Field(..., min_length=1, max_length=200)
+    body: str = Field("", max_length=5000)
+    author: str = Field("engineer", max_length=128)
+    tags: list[str] = Field(default_factory=list)
+    attachments: list[str] = Field(default_factory=list)
+
+
+class LogbookUpdateRequest(BaseModel):
+    """PATCH body for updating a logbook entry."""
+
+    title: str | None = Field(None, min_length=1, max_length=200)
+    body: str | None = Field(None, max_length=5000)
+    tags: list[str] | None = None
+    attachments: list[str] | None = None
+    resolved: bool | None = None

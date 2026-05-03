@@ -376,6 +376,38 @@ class EventLogEntry:
     id: int | None = None  # filled by storage on insert
 
 
+class LogbookEntryType(str, Enum):
+    """Machine logbook entry types — maintenance, notes, tasks, docs."""
+
+    NOTE = "note"
+    MAINTENANCE = "maintenance"
+    TASK = "task"
+    DOCUMENT = "document"
+    INCIDENT = "incident"
+
+
+@dataclass
+class LogbookEntry:
+    """One entry in the per-machine logbook (F-006 — competitive gap vs Schneider).
+
+    Maintenance notes, task management, document references per machine.
+    Persisted to the `logbook` table. Surfaced via
+    ``GET /api/machines/{id}/logbook``.
+    """
+
+    machine_id: str
+    entry_type: LogbookEntryType
+    title: str
+    body: str = ""
+    author: str = ""
+    tags: list[str] = field(default_factory=list)
+    attachments: list[str] = field(default_factory=list)  # filenames / URLs
+    resolved: bool = False
+    created_at: datetime = field(default_factory=_utc_now)
+    updated_at: datetime = field(default_factory=_utc_now)
+    id: int | None = None  # filled by storage on insert
+
+
 @dataclass
 class CycleStats:
     """Rolling per-step statistics — Welford's online algorithm.

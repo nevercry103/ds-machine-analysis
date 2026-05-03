@@ -12,13 +12,16 @@ from api.schemas.machine import (
     DowntimeRequest,
     EventAckRequest,
     EventLogResponse,
+    LogbookCreateRequest,
+    LogbookEntryResponse,
+    LogbookUpdateRequest,
     MachineSummary,
     OEEResponse,
     StepReplay,
     StepSummary,
 )
 from api.state import AppState
-from core.data_model import DOWNTIME_REASONS, DataBusEvent
+from core.data_model import DOWNTIME_REASONS, DataBusEvent, LogbookEntry, LogbookEntryType
 from core.event_logger import is_known_downtime_reason
 from core.machine_registry import MachineHandle
 
@@ -432,3 +435,101 @@ async def shift_stats(
         })
 
     return result
+
+
+# ---- Machine Logbook (F-006 — competitive gap vs Schneider) ----------
+
+_LOGBOOK_TYPES = {t.value for t in LogbookEntryType}
+
+
+def _logbook_response(entry: LogbookEntry) -> LogbookEntryResponse:
+    return LogbookEntryResponse(
+        id=entry.id or 0,
+        machine_id=entry.machine_id,
+        entry_type=entry.entry_type.value,
+        title=entry.title,
+        body=entry.body,
+        author=entry.author,
+        tags=list(entry.tags),
+        attachments=list(entry.attachments),
+        resolved=entry.resolved,
+        created_at=entry.created_at,
+        updated_at=entry.updated_at,
+    )
+
+
+@router.get("/{machine_id}/logbook", response_model=list[LogbookEntryResponse])
+async def list_logbook(
+    machine_id: str,
+    request: Request,
+    limit: int = 100,
+    entry_type: str | None = None,
+) -> list[LogbookEntryResponse]:
+    """Machine logbook — maintenance notes, tasks, documents."""
+    if limit < 1 or limit > 1000:
+        raise HTTPException(status_code=400, detail="limit must be 1..1000")
+    state = _state(request)
+    if state.registry.get(machine_id) is None:
+        raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
+    if entry_type is not None and entry_type not in _LOGBOOK_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown entry_type {entry_type!r}. Allowed: {sorted(_LOGBOOK_TYPES)}",
+        )
+    entries = await state.storage.get_logbook_entries(
+        machine_id, limit=limit, entry_type=entry_type
+    )
+    return [_logbook_response(e) for e in entries]
+
+
+@router.post("/{machine_id}/logbook", response_model=LogbookEntryResponse, status_code=201)
+async def create_logbook_entry(
+    machine_id: str, body: LogbookCreateRequest, request: Request
+) -> LogbookEntryResponse:
+    """Create a logbook entry for a machine."""
+    if body.entry_type not in _LOGBOOK_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown entry_type {body.entry_type!r}. Allowed: {sorted(_LOGBOOK_TYPES)}",
+        )
+    state = _state(request)
+    if state.registry.get(machine_id) is None:
+        raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
+    entry = LogbookEntry(
+        machine_id=machine_id,
+        entry_type=LogbookEntryType(body.entry_type),
+        title=body.title,
+        body=body.body,
+        author=body.author,
+        tags=list(body.tags),
+        attachments=list(body.attachments),
+    )
+    saved = await state.storage.save_logbook_entry(entry)
+    return _logbook_response(saved)
+
+
+@router.patch(
+    "/{machine_id}/logbook/{entry_id}",
+    response_model=LogbookEntryResponse,
+)
+async def update_logbook_entry(
+    machine_id: str,
+    entry_id: int,
+    body: LogbookUpdateRequest,
+    request: Request,
+) -> LogbookEntryResponse:
+    """Update a logbook entry (title, body, tags, resolved)."""
+    state = _state(request)
+    if state.registry.get(machine_id) is None:
+        raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
+    updated = await state.storage.update_logbook_entry(
+        entry_id,
+        title=body.title,
+        body=body.body,
+        tags=body.tags,
+        attachments=body.attachments,
+        resolved=body.resolved,
+    )
+    if updated is None:
+        raise HTTPException(status_code=404, detail=f"Logbook entry {entry_id} not found")
+    return _logbook_response(updated)

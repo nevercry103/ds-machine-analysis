@@ -24,6 +24,7 @@ from api.routers import health, license, machines, packs, ws
 from api.state import AppState, WSHub
 from core.data_model import DataBusEvent
 from core.machine_registry import MachineRegistry
+from core.mqtt_publisher import MqttConfig, MqttPublisher, make_mqtt_forwarder
 from core.tier_profile import resolve_current_tier
 from storage.sqlite_storage import SqliteStorage
 from utils.logger import log
@@ -85,6 +86,18 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
             "No machine_*.yaml found — API will run with empty registry",
             config_dir=str(state.registry.config_dir),
         )
+    # MQTT publisher (F-006 — MES/SCADA/Historian integration)
+    mqtt_config = MqttConfig(
+        enabled=os.getenv("DS_MA_MQTT_ENABLED", "").lower() in ("1", "true", "yes"),
+        broker=os.getenv("DS_MA_MQTT_BROKER", "localhost"),
+        port=int(os.getenv("DS_MA_MQTT_PORT", "1883")),
+        topic_prefix=os.getenv("DS_MA_MQTT_TOPIC_PREFIX", "ds-ma"),
+        username=os.getenv("DS_MA_MQTT_USERNAME", ""),
+        password=os.getenv("DS_MA_MQTT_PASSWORD", ""),
+    )
+    mqtt_pub = MqttPublisher(mqtt_config)
+    await mqtt_pub.start()
+
     for cfg in configs:
         if not cfg.enabled:
             log.info("Skipping disabled machine", machine_id=cfg.machine_id)
@@ -103,6 +116,10 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         await handle.bus.subscribe(
             f"ws_hub_{handle.machine_id}",
             _make_ws_forwarder(handle.machine_id, state.ws_hub),
+        )
+        await handle.bus.subscribe(
+            f"mqtt_{handle.machine_id}",
+            make_mqtt_forwarder(mqtt_pub),
         )
 
     await state.registry.start_all()
@@ -136,6 +153,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         if retention_task is not None:
             retention_task.cancel()
         log.info("API lifespan: shutting down")
+        await mqtt_pub.stop()
         await state.registry.stop_all()
         await state.storage.disconnect()
         log.info("API lifespan: shutdown complete")

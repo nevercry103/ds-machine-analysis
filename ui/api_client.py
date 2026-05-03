@@ -240,6 +240,21 @@ class ApiClient:
             for r in rows
         ]
 
+    # ---- Machine Logbook (F-006) ----------------------------------------
+
+    def get_logbook(self, machine_id: str, limit: int = 50) -> list[dict]:
+        return self._get_json(
+            f"/api/machines/{machine_id}/logbook", params={"limit": limit}
+        )
+
+    def create_logbook_entry(
+        self, machine_id: str, *, entry_type: str = "note", title: str, body: str = "", author: str = "engineer"
+    ) -> dict:
+        return self._post_json(
+            f"/api/machines/{machine_id}/logbook",
+            json={"entry_type": entry_type, "title": title, "body": body, "author": author},
+        )
+
     # ---- internals -------------------------------------------------------
 
     def _get_json(self, path: str, **kwargs: object) -> dict | list:
@@ -250,6 +265,18 @@ class ApiClient:
         if resp.status_code >= 400:
             raise ApiError(
                 f"GET {path} -> HTTP {resp.status_code}: {resp.text[:200]}",
+                status=resp.status_code,
+            )
+        return resp.json()
+
+    def _post_json(self, path: str, **kwargs: object) -> dict | list:
+        try:
+            resp = self._client.post(path, **kwargs)  # type: ignore[arg-type]
+        except httpx.HTTPError as exc:
+            raise ApiError(f"POST {path} failed: {exc}") from exc
+        if resp.status_code >= 400:
+            raise ApiError(
+                f"POST {path} -> HTTP {resp.status_code}: {resp.text[:200]}",
                 status=resp.status_code,
             )
         return resp.json()

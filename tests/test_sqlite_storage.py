@@ -8,7 +8,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-from core.data_model import CycleLog, CycleStatus, StepLog, StepStatus
+from core.data_model import CycleLog, CycleStatus, LogbookEntry, LogbookEntryType, StepLog, StepStatus
 from storage.sqlite_storage import SqliteStorage
 
 
@@ -166,5 +166,81 @@ async def test_delete_old_data_scoped_to_machine():
         # m1 cycle deleted, m2 cycle intact
         assert await storage.get_cycle("m1", 1) is None
         assert await storage.get_cycle("m2", 1) is not None
+
+        await storage.disconnect()
+
+
+# ---- Machine Logbook (F-006) ------------------------------------------
+
+@pytest.mark.asyncio
+async def test_logbook_create_and_list():
+    with TemporaryDirectory() as tmpdir:
+        storage = SqliteStorage(Path(tmpdir) / "logbook.db")
+        await storage.connect()
+
+        entry = LogbookEntry(
+            machine_id="machine_001",
+            entry_type=LogbookEntryType.MAINTENANCE,
+            title="Replaced servo motor",
+            body="Axis 2 servo was overheating. Replaced with spare.",
+            author="Ha",
+            tags=["servo", "axis2"],
+        )
+        saved = await storage.save_logbook_entry(entry)
+        assert saved.id is not None
+        assert saved.id > 0
+
+        entries = await storage.get_logbook_entries("machine_001")
+        assert len(entries) == 1
+        assert entries[0].title == "Replaced servo motor"
+        assert entries[0].tags == ["servo", "axis2"]
+
+        await storage.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_logbook_update():
+    with TemporaryDirectory() as tmpdir:
+        storage = SqliteStorage(Path(tmpdir) / "logbook_upd.db")
+        await storage.connect()
+
+        entry = LogbookEntry(
+            machine_id="machine_001",
+            entry_type=LogbookEntryType.TASK,
+            title="Calibrate sensors",
+            author="Ha",
+        )
+        saved = await storage.save_logbook_entry(entry)
+
+        updated = await storage.update_logbook_entry(
+            saved.id, title="Calibrate all sensors", resolved=True
+        )
+        assert updated is not None
+        assert updated.title == "Calibrate all sensors"
+        assert updated.resolved is True
+
+        await storage.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_logbook_filter_by_type():
+    with TemporaryDirectory() as tmpdir:
+        storage = SqliteStorage(Path(tmpdir) / "logbook_filter.db")
+        await storage.connect()
+
+        for etype in (LogbookEntryType.NOTE, LogbookEntryType.MAINTENANCE, LogbookEntryType.NOTE):
+            await storage.save_logbook_entry(
+                LogbookEntry(
+                    machine_id="m1",
+                    entry_type=etype,
+                    title=f"Entry {etype.value}",
+                )
+            )
+
+        notes = await storage.get_logbook_entries("m1", entry_type="note")
+        assert len(notes) == 2
+
+        maint = await storage.get_logbook_entries("m1", entry_type="maintenance")
+        assert len(maint) == 1
 
         await storage.disconnect()

@@ -40,6 +40,8 @@ from core.data_model import (
     EventCategory,
     EventLogEntry,
     EventSeverity,
+    LogbookEntry,
+    LogbookEntryType,
     OEESnapshot,
     StepLog,
     StepStatus,
@@ -140,6 +142,24 @@ class EventLogORM(Base):
     acknowledged: Mapped[bool] = mapped_column(default=False)
     acknowledged_by: Mapped[str] = mapped_column(String(128), nullable=False, default="")
     acknowledged_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class LogbookORM(Base):
+    """Machine logbook — maintenance notes, tasks, documents (F-006)."""
+
+    __tablename__ = "logbook"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    machine_id: Mapped[str] = mapped_column(String(128), nullable=False, index=True)
+    entry_type: Mapped[str] = mapped_column(String(32), nullable=False, default="note")
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(String(5000), nullable=False, default="")
+    author: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    tags: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    attachments: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    resolved: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=_utc_now)
 
 
 class CycleStatsORM(Base):
@@ -497,6 +517,111 @@ class SqliteStorage(BaseStorage):
                 row.acknowledged_at = _utc_now()
             return self._to_event(row)
 
+    # ------------------------------------------------------------------
+    # Machine Logbook (F-006)
+    # ------------------------------------------------------------------
+    async def save_logbook_entry(self, entry: LogbookEntry) -> LogbookEntry:
+        if self._session_factory is None:
+            raise RuntimeError("SQLite storage is not connected")
+        async with self._session_factory() as session:
+            async with session.begin():
+                row = LogbookORM(
+                    machine_id=entry.machine_id,
+                    entry_type=entry.entry_type.value,
+                    title=entry.title,
+                    body=entry.body,
+                    author=entry.author,
+                    tags=list(entry.tags),
+                    attachments=list(entry.attachments),
+                    resolved=entry.resolved,
+                    created_at=entry.created_at,
+                    updated_at=entry.updated_at,
+                )
+                session.add(row)
+                await session.flush()
+                entry.id = row.id
+        return entry
+
+    async def get_logbook_entries(
+        self,
+        machine_id: str,
+        limit: int = 100,
+        entry_type: Optional[str] = None,
+    ) -> List[LogbookEntry]:
+        if self._session_factory is None:
+            raise RuntimeError("SQLite storage is not connected")
+        async with self._session_factory() as session:
+            stmt = (
+                select(LogbookORM)
+                .where(LogbookORM.machine_id == machine_id)
+                .order_by(LogbookORM.created_at.desc())
+                .limit(limit)
+            )
+            if entry_type is not None:
+                stmt = stmt.where(LogbookORM.entry_type == entry_type.lower())
+            result = await session.execute(stmt)
+            return [self._to_logbook(row) for row in result.scalars().all()]
+
+    async def get_logbook_entry(self, entry_id: int) -> Optional[LogbookEntry]:
+        if self._session_factory is None:
+            raise RuntimeError("SQLite storage is not connected")
+        async with self._session_factory() as session:
+            stmt = select(LogbookORM).where(LogbookORM.id == entry_id)
+            result = await session.execute(stmt)
+            row = result.scalars().first()
+            return self._to_logbook(row) if row else None
+
+    async def update_logbook_entry(
+        self,
+        entry_id: int,
+        *,
+        title: Optional[str] = None,
+        body: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        attachments: Optional[List[str]] = None,
+        resolved: Optional[bool] = None,
+    ) -> Optional[LogbookEntry]:
+        if self._session_factory is None:
+            raise RuntimeError("SQLite storage is not connected")
+        async with self._session_factory() as session:
+            async with session.begin():
+                stmt = select(LogbookORM).where(LogbookORM.id == entry_id)
+                result = await session.execute(stmt)
+                row = result.scalars().first()
+                if row is None:
+                    return None
+                if title is not None:
+                    row.title = title
+                if body is not None:
+                    row.body = body
+                if tags is not None:
+                    row.tags = list(tags)
+                if attachments is not None:
+                    row.attachments = list(attachments)
+                if resolved is not None:
+                    row.resolved = resolved
+                row.updated_at = _utc_now()
+            return self._to_logbook(row)
+
+    @staticmethod
+    def _to_logbook(row: LogbookORM) -> LogbookEntry:
+        return LogbookEntry(
+            id=row.id,
+            machine_id=row.machine_id,
+            entry_type=LogbookEntryType(row.entry_type),
+            title=row.title,
+            body=row.body,
+            author=row.author,
+            tags=list(row.tags or []),
+            attachments=list(row.attachments or []),
+            resolved=row.resolved,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+        )
+
+    # ------------------------------------------------------------------
+    # Data Retention
+    # ------------------------------------------------------------------
     async def delete_old_data(
         self, cutoff: datetime, *, machine_id: Optional[str] = None
     ) -> int:

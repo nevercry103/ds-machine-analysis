@@ -66,6 +66,19 @@ export const getDowntimeReasons = (id) =>
 // Packs
 export const listPacks = () => jsonRequest("/packs");
 
+// Logbook (F-006)
+export const getLogbook = (id, opts = {}) => {
+  const q = new URLSearchParams();
+  q.set("limit", opts.limit ?? 50);
+  if (opts.entry_type) q.set("entry_type", opts.entry_type);
+  return jsonRequest(`/machines/${encodeURIComponent(id)}/logbook?${q}`);
+};
+export const createLogbookEntry = (id, payload) =>
+  jsonRequest(`/machines/${encodeURIComponent(id)}/logbook`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
 // =====================================================================
 // WebSocket — auto-reconnecting, JSON frames only.
 // =====================================================================
