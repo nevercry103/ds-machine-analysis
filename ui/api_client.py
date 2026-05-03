@@ -57,6 +57,48 @@ class CycleSummary:
     max_cv_pct: float | None
 
 
+@dataclass(frozen=True)
+class OEESnapshot:
+    """Mirror of `api.schemas.machine.OEEResponse`."""
+
+    machine_id: str
+    availability: float
+    performance: float
+    quality: float
+    oee: float
+    window_minutes: int
+    cycles_completed: int
+    cycles_aborted: int
+
+
+@dataclass(frozen=True)
+class EventEntry:
+    """Mirror of `api.schemas.machine.EventLogResponse`."""
+
+    id: int
+    machine_id: str
+    timestamp: str
+    severity: str
+    category: str
+    code: str
+    message: str
+    acknowledged: bool
+
+
+@dataclass(frozen=True)
+class StepStats:
+    """Mirror of the /stats endpoint response."""
+
+    step_index: int
+    step_name: str
+    count: int
+    avg_ms: float
+    min_ms: float | None
+    max_ms: float
+    stdev_ms: float
+    cv_pct: float
+
+
 class ApiClient:
     """Thin sync HTTP client. Re-uses one `httpx.Client` for keep-alive."""
 
@@ -95,6 +137,59 @@ class ApiClient:
             f"/api/machines/{machine_id}/cycles", params={"limit": limit}
         )
         return [_parse_cycle(row) for row in rows]
+
+    # ---- OEE (Pillar 2) -------------------------------------------------
+
+    def get_oee(self, machine_id: str) -> OEESnapshot:
+        row = self._get_json(f"/api/machines/{machine_id}/oee")
+        return OEESnapshot(
+            machine_id=row["machine_id"],
+            availability=float(row.get("availability", 0)),
+            performance=float(row.get("performance", 0)),
+            quality=float(row.get("quality", 0)),
+            oee=float(row.get("oee", 0)),
+            window_minutes=int(row.get("window_minutes", 60)),
+            cycles_completed=int(row.get("cycles_completed", 0)),
+            cycles_aborted=int(row.get("cycles_aborted", 0)),
+        )
+
+    # ---- Events (Pillar 3) ----------------------------------------------
+
+    def get_events(self, machine_id: str, limit: int = 50) -> list[EventEntry]:
+        rows = self._get_json(
+            f"/api/machines/{machine_id}/events", params={"limit": limit}
+        )
+        return [
+            EventEntry(
+                id=int(r.get("id", 0)),
+                machine_id=r["machine_id"],
+                timestamp=r.get("timestamp", ""),
+                severity=r.get("severity", "info"),
+                category=r.get("category", "info"),
+                code=r.get("code", ""),
+                message=r.get("message", ""),
+                acknowledged=bool(r.get("acknowledged", False)),
+            )
+            for r in rows
+        ]
+
+    # ---- Step stats ------------------------------------------------------
+
+    def get_step_stats(self, machine_id: str) -> list[StepStats]:
+        rows = self._get_json(f"/api/machines/{machine_id}/stats")
+        return [
+            StepStats(
+                step_index=int(r.get("step_index", 0)),
+                step_name=r.get("step_name", ""),
+                count=int(r.get("count", 0)),
+                avg_ms=float(r.get("avg_ms", 0)),
+                min_ms=r.get("min_ms"),
+                max_ms=float(r.get("max_ms", 0)),
+                stdev_ms=float(r.get("stdev_ms", 0)),
+                cv_pct=float(r.get("cv_pct", 0)),
+            )
+            for r in rows
+        ]
 
     # ---- internals -------------------------------------------------------
 

@@ -5,6 +5,8 @@ This window is one of several API consumers (alongside the PWA, CLI, and
 directly — every fetch goes through `ui.api_client.ApiClient`, which
 talks to the same FastAPI server the PWA does.
 
+Layout: left = machine list, right = tabbed detail pane (Gantt / OEE / Events).
+
 Architecture rule (CLAUDE.md §4): "API is the spine. PyQt6, PWA, CLI all
 consume the same FastAPI endpoints."
 """
@@ -20,17 +22,23 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QSplitter,
     QStatusBar,
+    QTabWidget,
     QWidget,
 )
 
 from ui.api_client import ApiClient, ApiError
-from ui.widgets import CycleGanttWidget, MachineManagerWidget
+from ui.widgets import (
+    CycleGanttWidget,
+    EventLogWidget,
+    MachineManagerWidget,
+    OEEDashboardWidget,
+)
 from ui.ws_client import MachineWSClient
 from utils.logger import log
 
 
 class MainWindow(QMainWindow):
-    """Desktop shell — left: machine list, right: Gantt of selected machine.
+    """Desktop shell — left: machine list, right: tabbed detail pane.
 
     The selected machine receives live updates via WebSocket; the machine
     list continues to poll (no WS endpoint for the full list).
@@ -46,13 +54,25 @@ class MainWindow(QMainWindow):
         self._api = api or ApiClient(self.DEFAULT_BASE_URL)
         self._ws: MachineWSClient | None = None
 
+        # ---- Left pane: machine list ----
         self._machines = MachineManagerWidget(self._api, self)
-        self._gantt = CycleGanttWidget(self._api, self)
+
+        # ---- Right pane: tabbed detail ----
+        self._tabs = QTabWidget(self)
+        self._gantt = CycleGanttWidget(self._api)
+        self._oee = OEEDashboardWidget(self._api)
+        self._events = EventLogWidget(self._api)
+        self._tabs.addTab(self._gantt, "Cycle Gantt")
+        self._tabs.addTab(self._oee, "OEE")
+        self._tabs.addTab(self._events, "Events")
+
+        # Wire machine selection to all detail panes
         self._machines.machineSelected.connect(self._on_machine_selected)
 
+        # ---- Layout ----
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         splitter.addWidget(self._machines)
-        splitter.addWidget(self._gantt)
+        splitter.addWidget(self._tabs)
         splitter.setStretchFactor(0, 2)
         splitter.setStretchFactor(1, 5)
 
@@ -62,6 +82,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(splitter)
         self.setCentralWidget(central)
 
+        # ---- Status bar ----
         status_bar = QStatusBar(self)
         self.setStatusBar(status_bar)
         self._api_status = QLabel("API: checking…")
@@ -75,12 +96,13 @@ class MainWindow(QMainWindow):
     # ---- machine selection + WS lifecycle --------------------------------
 
     def _on_machine_selected(self, machine_id: str) -> None:
-        """Switch Gantt to the selected machine and start a WS subscription."""
+        """Switch all detail panes to the selected machine and start WS."""
         self._gantt.set_machine(machine_id)
+        self._oee.set_machine(machine_id)
+        self._events.set_machine(machine_id)
         self._start_ws(machine_id)
 
     def _start_ws(self, machine_id: str) -> None:
-        """(Re)connect WS for the newly selected machine."""
         self._stop_ws()
         self._ws = MachineWSClient(
             self._api._base_url,  # noqa: SLF001
@@ -109,6 +131,7 @@ class MainWindow(QMainWindow):
 
         if event_type == "cycle_summary":
             self._gantt.update_cycle(payload)
+            self._oee.refresh()
             self._machines.refresh()
 
         elif event_type == "cycle_anomaly":
@@ -117,6 +140,11 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(
                 f"Variance anomaly: step '{step}' CV={cv:.1f}%", 10000
             )
+            self._events.refresh()
+
+        elif event_type in ("alarm", "status_change"):
+            self._events.refresh()
+            self._machines.refresh()
 
     # ---- helpers ---------------------------------------------------------
 

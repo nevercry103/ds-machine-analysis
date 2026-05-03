@@ -2,7 +2,14 @@
 ds_machine_analyzer/ui/widgets/__init__.py
 """
 
-from .machine_manager import MachineManagerWidget
 from .cycle_gantt import CycleGanttWidget
+from .event_log_view import EventLogWidget
+from .machine_manager import MachineManagerWidget
+from .oee_dashboard import OEEDashboardWidget
 
-__all__ = ["MachineManagerWidget", "CycleGanttWidget"]
+__all__ = [
+    "CycleGanttWidget",
+    "EventLogWidget",
+    "MachineManagerWidget",
+    "OEEDashboardWidget",
+]
