@@ -14,7 +14,7 @@ from typing import List, Optional
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from .data_model import MachineConfig, ProtocolConfig, ReplayTagDef
+from .data_model import MachineConfig, ProtocolConfig, ReplayTagDef, ShiftDef
 
 
 class StepConfig(BaseModel):
@@ -123,6 +123,25 @@ class ReplaySection(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ShiftEntry(BaseModel):
+    """One shift in the factory schedule."""
+
+    name: str = Field(..., min_length=1)
+    start_hour: int = Field(..., ge=0, le=23)
+    end_hour: int = Field(..., ge=0, le=23)
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class ShiftsSection(BaseModel):
+    """Multi-shift aggregation (Phase 2)."""
+
+    enabled: bool = False
+    shifts: List[ShiftEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class LicensingSection(BaseModel):
     """Tier-gating declaration on the machine config."""
 
@@ -152,6 +171,7 @@ class MachineConfigSchema(BaseModel):
     event_log: EventLogSection = Field(default_factory=EventLogSection)
     storage: StorageSection = Field(default_factory=StorageSection)
     replay: ReplaySection = Field(default_factory=ReplaySection)
+    shifts: ShiftsSection = Field(default_factory=ShiftsSection)
     licensing: LicensingSection = Field(default_factory=LicensingSection)
 
     model_config = ConfigDict(extra="forbid")
@@ -221,5 +241,9 @@ class MachineConfigSchema(BaseModel):
                 )
                 for t in self.replay.tags
             ],
+            shifts=[
+                ShiftDef(name=s.name, start_hour=s.start_hour, end_hour=s.end_hour)
+                for s in self.shifts.shifts
+            ] if self.shifts.enabled else [],
             tier_required=self.licensing.tier_required,
         )

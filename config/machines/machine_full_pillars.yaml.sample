@@ -58,5 +58,18 @@ replay:
       address: "ns=3;s=IO.VacuumPresent"
       kind: "bool"
 
+shifts:
+  enabled: true
+  shifts:
+    - name: "Morning"
+      start_hour: 6
+      end_hour: 14
+    - name: "Afternoon"
+      start_hour: 14
+      end_hour: 22
+    - name: "Night"
+      start_hour: 22
+      end_hour: 6
+
 licensing:
   tier_required: "tier_5"

@@ -103,6 +103,44 @@ class ReplayTagDef:
 
 
 @dataclass
+class ShiftDef:
+    """One shift in the factory schedule.
+
+    `start_hour` and `end_hour` are 0-23 integers. Overnight shifts
+    where start > end (e.g., 22:00-06:00) are supported.
+    """
+
+    name: str
+    start_hour: int  # 0-23
+    end_hour: int    # 0-23
+
+    def contains(self, hour: int) -> bool:
+        """Return True if `hour` (0-23) falls within this shift."""
+        if self.start_hour <= self.end_hour:
+            return self.start_hour <= hour < self.end_hour
+        # Overnight shift (e.g., 22-06)
+        return hour >= self.start_hour or hour < self.end_hour
+
+
+# Default shifts when none configured — single 24h shift.
+DEFAULT_SHIFTS: tuple[ShiftDef, ...] = (
+    ShiftDef(name="All day", start_hour=0, end_hour=0),
+)
+
+
+def resolve_shift(shifts: list[ShiftDef], hour: int) -> str:
+    """Return the shift name for a given hour (0-23)."""
+    if not shifts:
+        return "All day"
+    for s in shifts:
+        if s.start_hour == s.end_hour:
+            return s.name  # 24h catch-all
+        if s.contains(hour):
+            return s.name
+    return "Unscheduled"
+
+
+@dataclass
 class ProtocolConfig:
     """Configuration for one physical PLC connection.
 
@@ -159,6 +197,9 @@ class MachineConfig:
     # at every step boundary. Empty list = Replay Mode off.
     replay_enabled: bool = False
     replay_tags: list[ReplayTagDef] = field(default_factory=list)
+
+    # Multi-shift aggregation (Phase 2).
+    shifts: list[ShiftDef] = field(default_factory=list)
 
     # Tier gating (F-006): refuse to load if license tier < required.
     tier_required: str = "tier_1"

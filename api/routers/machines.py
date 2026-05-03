@@ -369,3 +369,63 @@ async def step_stats(machine_id: str, request: Request) -> list[dict]:
         }
         for s in handle.processor.step_stats
     ]
+
+
+@router.get("/{machine_id}/shifts/stats")
+async def shift_stats(
+    machine_id: str, request: Request, limit: int = 200
+) -> list[dict]:
+    """Multi-shift aggregation — cycle counts and avg duration per shift.
+
+    Groups recent cycles by configured shift windows. Returns one entry
+    per shift with cycle count, avg total_ms, and the shift time range.
+    """
+    from core.data_model import resolve_shift
+
+    if limit < 1 or limit > 1000:
+        raise HTTPException(status_code=400, detail="limit must be 1..1000")
+    state = _state(request)
+    handle = state.registry.get(machine_id)
+    if handle is None:
+        raise HTTPException(status_code=404, detail=f"Machine {machine_id!r} not found")
+
+    shifts = handle.config.shifts
+    if not shifts:
+        return [{"shift": "All day", "start_hour": 0, "end_hour": 0,
+                 "cycle_count": handle.processor.cycle_count,
+                 "avg_total_ms": round(handle.processor.last_total_ms, 2)
+                 if handle.processor.last_total_ms else None}]
+
+    cycles = await state.storage.get_cycles(machine_id, limit=limit)
+
+    # Group by shift
+    buckets: dict[str, list[float]] = {s.name: [] for s in shifts}
+    buckets["Unscheduled"] = []
+    for cycle in cycles:
+        hour = cycle.timestamp_start.hour
+        shift_name = resolve_shift(shifts, hour)
+        buckets.setdefault(shift_name, []).append(cycle.total_duration_ms)
+
+    result = []
+    for s in shifts:
+        durations = buckets.get(s.name, [])
+        result.append({
+            "shift": s.name,
+            "start_hour": s.start_hour,
+            "end_hour": s.end_hour,
+            "cycle_count": len(durations),
+            "avg_total_ms": round(sum(durations) / len(durations), 2) if durations else None,
+        })
+
+    # Include unscheduled if any
+    unsched = buckets.get("Unscheduled", [])
+    if unsched:
+        result.append({
+            "shift": "Unscheduled",
+            "start_hour": None,
+            "end_hour": None,
+            "cycle_count": len(unsched),
+            "avg_total_ms": round(sum(unsched) / len(unsched), 2),
+        })
+
+    return result
